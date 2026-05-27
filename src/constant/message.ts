@@ -8,6 +8,7 @@ export const TELEPORT_MESSAGE = {
 
 export const PANEL_MESSAGE = {
   ONLY_IN_VC_CHANNEL: "このパネルは作成された個人VCチャンネル内でのみ使用できます。",
+  ONLY_VC_MEMBER: "このパネルはVCに参加しているメンバーのみ操作できます。",
   INVALID_LIMIT: "人数制限は0〜99の整数で入力してください。",
   NAME_TOO_LONG: "VC名は100文字以内で入力してください。",
   STATUS_TOO_LONG: "ステータスは500文字以内で入力してください。",

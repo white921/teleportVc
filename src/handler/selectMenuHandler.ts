@@ -34,6 +34,14 @@ export async function handleChannelSelectMenu(
     return;
   }
 
+  if (!voiceChannel.members.has(interaction.user.id)) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.ONLY_VC_MEMBER,
+      ephemeral: true,
+    });
+    return;
+  }
+
   const categoryId = interaction.values[0];
   const category = interaction.guild?.channels.cache.get(categoryId);
   if (!category || category.type !== ChannelType.GuildCategory) {
@@ -83,6 +91,14 @@ export async function handleUserSelectMenu(
   if (!isTracked) {
     await interaction.reply({
       content: PANEL_MESSAGE.ONLY_IN_VC_CHANNEL,
+      ephemeral: true,
+    });
+    return;
+  }
+
+  if (!voiceChannel.members.has(interaction.user.id)) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.ONLY_VC_MEMBER,
       ephemeral: true,
     });
     return;

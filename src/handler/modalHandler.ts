@@ -21,6 +21,15 @@ export async function handleModalSubmit(
   }
   const voiceChannel = channel as VoiceChannel;
 
+  // VCに参加しているメンバーのみ操作可能。
+  if (!voiceChannel.members.has(interaction.user.id)) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.ONLY_VC_MEMBER,
+      ephemeral: true,
+    });
+    return;
+  }
+
   switch (interaction.customId) {
     case PANEL_COMMAND_NAMES.CHANGE_VC_NAME: {
       const name = interaction.fields

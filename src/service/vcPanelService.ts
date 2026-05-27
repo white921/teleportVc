@@ -32,13 +32,13 @@ export class VcPanelService {
         .setCustomId(PANEL_COMMAND_NAMES.CHANGE_CATEGORY)
         .setLabel(VC_PANEL_MESSAGES.CHANGE_CATEGORY)
         .setStyle(ButtonStyle.Secondary),
+    );
+
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(PANEL_COMMAND_NAMES.SECRET)
         .setLabel(VC_PANEL_MESSAGES.SECRET)
         .setStyle(ButtonStyle.Danger),
-    );
-
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(PANEL_COMMAND_NAMES.SECRET_RELEASE)
         .setLabel(VC_PANEL_MESSAGES.SECRET_RELEASE)

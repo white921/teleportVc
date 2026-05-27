@@ -41,6 +41,15 @@ export async function handlePanelButton(
     return;
   }
 
+  // VCに参加しているメンバーのみ操作可能。
+  if (!(channel as VoiceChannel).members.has(interaction.user.id)) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.ONLY_VC_MEMBER,
+      ephemeral: true,
+    });
+    return;
+  }
+
   switch (interaction.customId) {
     case PANEL_COMMAND_NAMES.CHANGE_VC_NAME:
       await showNameModal(interaction);
