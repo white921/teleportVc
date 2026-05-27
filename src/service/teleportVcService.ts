@@ -160,6 +160,19 @@ export class TeleportVcService {
     if (!row) return;
     if (!row.auto_rename) return;
 
+    // デバッグ: Botのキャッシュが見ているVC内メンバーの presence を出力
+    for (const m of channel.members.values()) {
+      if (m.user.bot) continue;
+      const acts = (m.presence?.activities ?? []).map(
+        (a) => `${ActivityType[a.type]}:${a.name}`,
+      );
+      console.log(
+        `[vc-presence] ${channel.name} / ${m.displayName} presence=${
+          m.presence?.status ?? "null"
+        } activities=[${acts.join(", ")}]`,
+      );
+    }
+
     let desiredName = pickDesiredName(channel, row.owner_display_name);
     // シークレット適用中（VC名に🔒が付いている）は🔒プレフィックスを維持する。
     if (hasSecretPrefix(channel.name)) {
