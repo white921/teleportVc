@@ -4,10 +4,20 @@ import {
   ButtonStyle,
   EmbedBuilder,
   UserSelectMenuBuilder,
+  VoiceChannel,
 } from "discord.js";
 
 import { PANEL_COMMAND_NAMES } from "../constant/command";
 import { VC_PANEL_MESSAGES } from "../constant/panel";
+
+/**
+ * 現在VC内にいる非BotメンバーのID一覧を返す。
+ */
+export function getCurrentVcMemberIds(voiceChannel: VoiceChannel): string[] {
+  return voiceChannel.members
+    .filter((m) => !m.user.bot)
+    .map((m) => m.id);
+}
 
 /**
  * 追加済みメンバーのメンションを表示するembedを生成する。

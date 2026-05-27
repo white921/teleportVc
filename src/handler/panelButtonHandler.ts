@@ -16,6 +16,7 @@ import { PANEL_MESSAGE } from "../constant/message";
 import {
   buildSecretComponents,
   buildSecretEmbed,
+  getCurrentVcMemberIds,
   parseSecretUserIds,
 } from "../util/secret";
 
@@ -66,15 +67,21 @@ export async function handlePanelButton(
 }
 
 async function clearSecretSelection(interaction: ButtonInteraction) {
+  const voiceChannel = interaction.channel as VoiceChannel;
+  // 追加分のみリセットし、現在VCにいるメンバーは表示として残す。
+  const currentMemberIds = getCurrentVcMemberIds(voiceChannel);
   await interaction.update({
-    embeds: [buildSecretEmbed([])],
+    embeds: [buildSecretEmbed(currentMemberIds)],
     components: buildSecretComponents(),
   });
 }
 
 async function showSecretUserSelect(interaction: ButtonInteraction) {
+  const voiceChannel = interaction.channel as VoiceChannel;
+  // 現在VCにいるメンバーは必ずアクセス権を得るため、最初から追加済みとして表示する。
+  const currentMemberIds = getCurrentVcMemberIds(voiceChannel);
   await interaction.reply({
-    embeds: [buildSecretEmbed([])],
+    embeds: [buildSecretEmbed(currentMemberIds)],
     components: buildSecretComponents(),
     ephemeral: true,
   });
