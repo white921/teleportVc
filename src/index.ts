@@ -1,4 +1,5 @@
 import {
+  ActivityType,
   Client,
   GatewayIntentBits,
   ChannelType,
@@ -117,6 +118,17 @@ client.on(
     try {
       const member = presence.member;
       if (!member || member.user.bot) return;
+
+      // デバッグ: presence で受信したアクティビティを出力
+      const activities = (presence.activities ?? []).map(
+        (a) => `${ActivityType[a.type]}:${a.name}`,
+      );
+      console.log(
+        `[presence] ${member.displayName} -> [${activities.join(", ")}] vc=${
+          member.voice.channel?.name ?? "なし"
+        }`,
+      );
+
       const voiceChannel = member.voice.channel;
       if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) return;
       await TeleportVcService.syncVcNameToTopGame(voiceChannel as VoiceChannel);

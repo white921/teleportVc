@@ -163,15 +163,27 @@ export class TeleportVcService {
     if (hasSecretPrefix(channel.name)) {
       desiredName = addSecretPrefix(desiredName);
     }
-    if (desiredName === channel.name) return;
+    if (desiredName === channel.name) {
+      console.log(
+        `[rename] ${channel.name} -> 変更なし（既に「${desiredName}」）`,
+      );
+      return;
+    }
 
     const now = Date.now();
     const last = lastRenamedAt.get(channel.id) ?? 0;
-    if (now - last < RENAME_COOLDOWN_MS) return;
+    if (now - last < RENAME_COOLDOWN_MS) {
+      const waitSec = Math.ceil((RENAME_COOLDOWN_MS - (now - last)) / 1000);
+      console.log(
+        `[rename] ${channel.name} -> 「${desiredName}」に変更したいがクールダウン中（あと約${waitSec}秒）`,
+      );
+      return;
+    }
 
     try {
       await channel.setName(desiredName);
       lastRenamedAt.set(channel.id, now);
+      console.log(`[rename] 「${channel.name}」を「${desiredName}」に変更`);
     } catch (e: any) {
       console.error("VCリネームエラー:", e?.message ?? e);
     }
