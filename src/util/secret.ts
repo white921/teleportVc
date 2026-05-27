@@ -44,13 +44,17 @@ export function parseSecretUserIds(description: string | null | undefined): stri
 
 /**
  * 1人ずつ選択するユーザーセレクトと確定ボタンの行を生成する。
+ * select の customId には毎回ユニークな nonce を付与する。
+ * これにより update 時に Discord クライアントが「別コンポーネント」として
+ * 再描画し、前回の選択状態が残らない（中身が空になる）。
  */
 export function buildSecretComponents(): [
   ActionRowBuilder<UserSelectMenuBuilder>,
   ActionRowBuilder<ButtonBuilder>,
 ] {
+  const nonce = Date.now().toString(36);
   const select = new UserSelectMenuBuilder()
-    .setCustomId(PANEL_COMMAND_NAMES.SECRET_USER_SELECT)
+    .setCustomId(`${PANEL_COMMAND_NAMES.SECRET_USER_SELECT}:${nonce}`)
     .setPlaceholder(VC_PANEL_MESSAGES.SECRET_USER_SELECT_PLACEHOLDER)
     .setMinValues(1)
     .setMaxValues(1);

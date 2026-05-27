@@ -11,7 +11,7 @@ export const VC_PANEL_MESSAGES = {
   CHANGE_CATEGORY: "カテゴリを移動",
   CATEGORY_SELECT_PLACEHOLDER: "移動先カテゴリを選択",
   SECRET: "シークレット",
-  SECRET_USER_SELECT_PLACEHOLDER: "許可するユーザーを選択（1人ずつ追加）",
+  SECRET_USER_SELECT_PLACEHOLDER: "許可するユーザーを選択",
   SECRET_CONFIRM: "確定",
   SECRET_EMBED_TITLE: "シークレット設定",
   SECRET_EMBED_DESC:

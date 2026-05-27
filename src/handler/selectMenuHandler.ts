@@ -65,7 +65,8 @@ export async function handleChannelSelectMenu(
 export async function handleUserSelectMenu(
   interaction: UserSelectMenuInteraction,
 ): Promise<void> {
-  if (interaction.customId !== PANEL_COMMAND_NAMES.SECRET_USER_SELECT) return;
+  if (!interaction.customId.startsWith(PANEL_COMMAND_NAMES.SECRET_USER_SELECT))
+    return;
 
   const channel = interaction.channel;
   const guild = interaction.guild;
