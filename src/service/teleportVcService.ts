@@ -4,6 +4,8 @@ import {
   Client,
   GuildBasedChannel,
   GuildMember,
+  OverwriteType,
+  PermissionFlagsBits,
   VoiceChannel,
 } from "discord.js";
 
@@ -44,6 +46,22 @@ export class TeleportVcService {
       deny: o.deny,
     }));
 
+    // Bot自身の権限を明示。親VCで@everyoneが制限されていてもBotが移動/送信できるよう保証する。
+    const botId = guild.members.me?.id;
+    if (botId) {
+      permissionOverwrites.push({
+        id: botId,
+        type: OverwriteType.Member,
+        allow:
+          PermissionFlagsBits.ViewChannel |
+          PermissionFlagsBits.Connect |
+          PermissionFlagsBits.SendMessages |
+          PermissionFlagsBits.ManageChannels |
+          PermissionFlagsBits.MoveMembers,
+        deny: 0n,
+      } as any);
+    }
+
     const defaultName = `${member.displayName}のVC`;
 
     const voiceChannel = await guild.channels.create({
@@ -62,22 +80,32 @@ export class TeleportVcService {
       parentVcId: parentVc.id,
     });
 
-    try {
-      const panel = VcPanelService.createVcPanel();
-      await voiceChannel.send(panel);
-    } catch (e) {
-      console.error("パネル送信エラー:", e);
-    }
-
+    // 先にユーザーを新VCへ移動（転送VCに置き去りにしない）
     try {
       await member.voice.setChannel(voiceChannel.id);
-    } catch (e) {
-      console.error("VC移動エラー:", e);
+    } catch (e: any) {
+      console.error(
+        "VC移動エラー:",
+        e?.message ?? e,
+        `(channel=${voiceChannel.id}, member=${member.id})`,
+      );
       try {
         await voiceChannel.delete();
       } catch {}
       await this.markInactive(voiceChannel.id);
       throw new Error(TELEPORT_MESSAGE.CREATE_FAILED);
+    }
+
+    // 続いて新VCのインチャ（ボイスチャンネル内テキストチャット）にパネル送信
+    try {
+      const panel = VcPanelService.createVcPanel();
+      await voiceChannel.send(panel);
+    } catch (e: any) {
+      console.error(
+        "パネル送信エラー:",
+        e?.message ?? e,
+        `(channel=${voiceChannel.id})`,
+      );
     }
   }
 
