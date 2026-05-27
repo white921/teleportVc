@@ -14,7 +14,7 @@ import { VcPanelService } from "./vcPanelService";
 import { getVcMembersCount } from "../util/vc";
 import {
   addSecretPrefix,
-  isSecretChannel,
+  hasSecretPrefix,
   stripSecretPrefix,
 } from "../util/secret";
 import { TELEPORT_MESSAGE } from "../constant/message";
@@ -163,8 +163,8 @@ export class TeleportVcService {
     if (!row.auto_rename) return;
 
     let desiredName = pickDesiredName(channel, row.owner_display_name);
-    // シークレット適用中は🔒プレフィックスを維持する。
-    if (isSecretChannel(channel)) {
+    // シークレット適用中（VC名に🔒が付いている）は🔒プレフィックスを維持する。
+    if (hasSecretPrefix(channel.name)) {
       desiredName = addSecretPrefix(desiredName);
     }
     if (desiredName === channel.name) return;

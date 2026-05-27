@@ -9,7 +9,7 @@ import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
 import {
   addSecretPrefix,
-  isSecretChannel,
+  hasSecretPrefix,
   stripSecretPrefix,
 } from "../util/secret";
 
@@ -47,8 +47,9 @@ export async function handleModalSubmit(
         });
         return;
       }
-      // シークレット適用中は🔒プレフィックスを維持する（入力に含まれていても重複させない）。
-      const finalName = isSecretChannel(voiceChannel)
+      // シークレット適用中（VC名に🔒が付いている）は🔒プレフィックスを維持する
+      // （入力に含まれていても重複させない）。
+      const finalName = hasSecretPrefix(voiceChannel.name)
         ? addSecretPrefix(name)
         : stripSecretPrefix(name);
       await voiceChannel.setName(finalName);

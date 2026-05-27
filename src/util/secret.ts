@@ -3,7 +3,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
-  PermissionFlagsBits,
   UserSelectMenuBuilder,
   VoiceChannel,
 } from "discord.js";
@@ -24,16 +23,11 @@ export function getCurrentVcMemberIds(voiceChannel: VoiceChannel): string[] {
 }
 
 /**
- * @everyone の閲覧/接続が拒否されていれば、シークレット適用中とみなす。
+ * VC名の先頭に🔒プレフィックスが付いていれば、シークレット適用中とみなす。
+ * （権限の継承で誤判定しないよう、状態の真実はVC名のプレフィックスとする）
  */
-export function isSecretChannel(voiceChannel: VoiceChannel): boolean {
-  const everyoneId = voiceChannel.guild.roles.everyone.id;
-  const overwrite = voiceChannel.permissionOverwrites.cache.get(everyoneId);
-  if (!overwrite) return false;
-  return (
-    overwrite.deny.has(PermissionFlagsBits.ViewChannel) ||
-    overwrite.deny.has(PermissionFlagsBits.Connect)
-  );
+export function hasSecretPrefix(name: string): boolean {
+  return name.startsWith(SECRET_NAME_PREFIX);
 }
 
 /**
