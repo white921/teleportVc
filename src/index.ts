@@ -9,6 +9,7 @@ import {
 import dotenv from "dotenv";
 
 import { TELEPORT_VC_IDS } from "./constant/id";
+import { DbService } from "./service/dbService";
 import { TeleportVcService } from "./service/teleportVcService";
 import { handlePanelButton } from "./handler/panelButtonHandler";
 import { handleModalSubmit } from "./handler/modalHandler";
@@ -30,6 +31,11 @@ const client = new Client({
 
 client.once("clientReady", async () => {
   console.log(`Logged in as ${client.user?.tag}`);
+  try {
+    await DbService.migrate();
+  } catch (e) {
+    console.error("DBマイグレーションエラー:", e);
+  }
   try {
     await TeleportVcService.cleanupOnStartup(client);
   } catch (e) {
