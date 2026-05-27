@@ -59,6 +59,11 @@ export function buildSecretComponents(): [
     .setMinValues(1)
     .setMaxValues(1);
 
+  const clear = new ButtonBuilder()
+    .setCustomId(PANEL_COMMAND_NAMES.SECRET_CLEAR)
+    .setLabel(VC_PANEL_MESSAGES.SECRET_CLEAR)
+    .setStyle(ButtonStyle.Secondary);
+
   const confirm = new ButtonBuilder()
     .setCustomId(PANEL_COMMAND_NAMES.SECRET_CONFIRM)
     .setLabel(VC_PANEL_MESSAGES.SECRET_CONFIRM)
@@ -66,6 +71,6 @@ export function buildSecretComponents(): [
 
   return [
     new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(select),
-    new ActionRowBuilder<ButtonBuilder>().addComponents(confirm),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(clear, confirm),
   ];
 }

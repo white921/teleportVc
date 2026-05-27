@@ -13,9 +13,12 @@ export const VC_PANEL_MESSAGES = {
   SECRET: "シークレット",
   SECRET_USER_SELECT_PLACEHOLDER: "許可するユーザーを選択",
   SECRET_CONFIRM: "確定",
+  SECRET_CLEAR: "全てクリア",
   SECRET_EMBED_TITLE: "シークレット設定",
   SECRET_EMBED_DESC:
     "セレクトから1人ずつ追加してください。\n" +
+    "・追加済みのユーザーを再度選ぶと解除されます。\n" +
+    "・「全てクリア」で追加済みメンバーを一括リセットできます。\n" +
     "「確定」を押すと、現在VC内のメンバーと追加したメンバーだけが閲覧・接続できるようになります。",
   SECRET_SELECTED_LABEL: "追加済みメンバー",
   SECRET_SELECTED_NONE: "なし",

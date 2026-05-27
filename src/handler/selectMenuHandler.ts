@@ -88,11 +88,16 @@ export async function handleUserSelectMenu(
     return;
   }
 
-  // 既存の追加済みメンバー（embedのメンションから読み戻す）に今回の選択を加える。
+  // 既存の追加済みメンバー（embedのメンションから読み戻す）に今回の選択をトグルで反映する。
+  // 既に追加済みのユーザーを再度選んだ場合は解除（削除）する。
   const existing = parseSecretUserIds(interaction.message.embeds[0]?.description);
   const userIds = new Set<string>(existing);
   for (const userId of interaction.values) {
-    userIds.add(userId);
+    if (userIds.has(userId)) {
+      userIds.delete(userId);
+    } else {
+      userIds.add(userId);
+    }
   }
 
   await interaction.update({

@@ -59,7 +59,17 @@ export async function handlePanelButton(
     case PANEL_COMMAND_NAMES.SECRET_CONFIRM:
       await applySecretFromPanel(interaction);
       return;
+    case PANEL_COMMAND_NAMES.SECRET_CLEAR:
+      await clearSecretSelection(interaction);
+      return;
   }
+}
+
+async function clearSecretSelection(interaction: ButtonInteraction) {
+  await interaction.update({
+    embeds: [buildSecretEmbed([])],
+    components: buildSecretComponents(),
+  });
 }
 
 async function showSecretUserSelect(interaction: ButtonInteraction) {
