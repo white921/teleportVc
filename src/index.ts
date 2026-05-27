@@ -8,7 +8,7 @@ import {
 } from "discord.js";
 import dotenv from "dotenv";
 
-import { TELEPORT_VC_IDS } from "./constant/id";
+import { MANAGED_BOT_IDS, TELEPORT_VC_IDS } from "./constant/id";
 import { DbService } from "./service/dbService";
 import { TeleportVcService } from "./service/teleportVcService";
 import { handlePanelButton } from "./handler/panelButtonHandler";
@@ -51,6 +51,25 @@ client.on(
       const newChannel = newState.channel;
 
       if (oldChannel?.id === newChannel?.id) return;
+
+      // 管理対象ボット（音楽/読み上げ）の入退室で人数制限を自動増減する。
+      const changedMember = newState.member ?? oldState.member;
+      if (changedMember && MANAGED_BOT_IDS.includes(changedMember.id)) {
+        if (oldChannel && oldChannel.type === ChannelType.GuildVoice) {
+          await TeleportVcService.adjustUserLimitForBot(
+            oldChannel as VoiceChannel,
+            -1,
+          );
+        }
+        if (newChannel && newChannel.type === ChannelType.GuildVoice) {
+          await TeleportVcService.adjustUserLimitForBot(
+            newChannel as VoiceChannel,
+            1,
+          );
+        }
+        return;
+      }
+
       if (newState.member?.user.bot || oldState.member?.user.bot) return;
 
       if (

@@ -367,6 +367,32 @@ export class TeleportVcService {
     }
   }
 
+  /**
+   * 管理対象ボット（音楽/読み上げ等）の入退室に応じて人数制限を増減する。
+   * - 対象が追跡中の個人VCでなければ何もしない
+   * - 人数制限が「無制限(0)」のVCでは調整しない
+   * - 1〜99の範囲に丸める
+   */
+  static async adjustUserLimitForBot(
+    channel: VoiceChannel,
+    delta: number,
+  ): Promise<void> {
+    const tracked = await this.isTrackedVc(channel.id);
+    if (!tracked) return;
+
+    const current = channel.userLimit; // 0 = 無制限
+    if (current === 0) return;
+
+    const next = Math.min(99, Math.max(1, current + delta));
+    if (next === current) return;
+
+    try {
+      await channel.setUserLimit(next);
+    } catch (e: any) {
+      console.error("ボット用人数制限調整エラー:", e?.message ?? e);
+    }
+  }
+
   static async isTrackedVc(channelId: string): Promise<boolean> {
     const row = await this.getTrackedVc(channelId);
     return !!row;
