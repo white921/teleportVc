@@ -8,7 +8,6 @@ export const PANEL_COMMAND_NAMES = {
   SECRET_USER_SELECT: "teleport_secret_user_select",
   SECRET_CONFIRM: "teleport_secret_confirm",
   SECRET_CLEAR: "teleport_secret_clear",
-  SECRET_RELEASE: "teleport_secret_release",
 } as const;
 
 export const MODAL_INPUT_IDS = {

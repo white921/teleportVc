@@ -72,28 +72,7 @@ export async function handlePanelButton(
     case PANEL_COMMAND_NAMES.SECRET_CLEAR:
       await clearSecretSelection(interaction);
       return;
-    case PANEL_COMMAND_NAMES.SECRET_RELEASE:
-      await releaseSecretFromPanel(interaction);
-      return;
   }
-}
-
-async function releaseSecretFromPanel(interaction: ButtonInteraction) {
-  const voiceChannel = interaction.channel as VoiceChannel;
-  try {
-    await TeleportVcService.releaseSecretPermissions(voiceChannel);
-  } catch (e: any) {
-    console.error("シークレット解除エラー:", e?.message ?? e);
-    await interaction.reply({
-      content: PANEL_MESSAGE.SECRET_RELEASE_FAILED,
-      ephemeral: true,
-    });
-    return;
-  }
-  await interaction.reply({
-    content: PANEL_MESSAGE.SECRET_RELEASED,
-    ephemeral: true,
-  });
 }
 
 async function clearSecretSelection(interaction: ButtonInteraction) {
