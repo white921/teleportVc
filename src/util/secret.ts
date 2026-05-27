@@ -3,12 +3,16 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  PermissionFlagsBits,
   UserSelectMenuBuilder,
   VoiceChannel,
 } from "discord.js";
 
 import { PANEL_COMMAND_NAMES } from "../constant/command";
 import { VC_PANEL_MESSAGES } from "../constant/panel";
+
+// シークレット適用中のVC名に付けるプレフィックス。
+export const SECRET_NAME_PREFIX = "🔒";
 
 /**
  * 現在VC内にいる非BotメンバーのID一覧を返す。
@@ -17,6 +21,37 @@ export function getCurrentVcMemberIds(voiceChannel: VoiceChannel): string[] {
   return voiceChannel.members
     .filter((m) => !m.user.bot)
     .map((m) => m.id);
+}
+
+/**
+ * @everyone の閲覧/接続が拒否されていれば、シークレット適用中とみなす。
+ */
+export function isSecretChannel(voiceChannel: VoiceChannel): boolean {
+  const everyoneId = voiceChannel.guild.roles.everyone.id;
+  const overwrite = voiceChannel.permissionOverwrites.cache.get(everyoneId);
+  if (!overwrite) return false;
+  return (
+    overwrite.deny.has(PermissionFlagsBits.ViewChannel) ||
+    overwrite.deny.has(PermissionFlagsBits.Connect)
+  );
+}
+
+/**
+ * VC名の先頭から🔒プレフィックスを取り除く。
+ */
+export function stripSecretPrefix(name: string): string {
+  if (name.startsWith(SECRET_NAME_PREFIX)) {
+    return name.slice(SECRET_NAME_PREFIX.length).trimStart();
+  }
+  return name;
+}
+
+/**
+ * VC名の先頭に🔒プレフィックスを付ける（重複は付けない・100文字に丸める）。
+ */
+export function addSecretPrefix(name: string): string {
+  const base = stripSecretPrefix(name);
+  return `${SECRET_NAME_PREFIX} ${base}`.slice(0, 100);
 }
 
 /**

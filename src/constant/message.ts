@@ -20,4 +20,6 @@ export const PANEL_MESSAGE = {
   CATEGORY_MOVE_FAILED: "カテゴリ移動に失敗しました。Botの権限を確認してください。",
   SECRET_APPLIED: "シークレットモードを適用しました。",
   SECRET_FAILED: "シークレットモードの適用に失敗しました。Botの権限を確認してください。",
+  SECRET_RELEASED: "シークレットモードを解除しました。",
+  SECRET_RELEASE_FAILED: "シークレットモードの解除に失敗しました。Botの権限を確認してください。",
 } as const;

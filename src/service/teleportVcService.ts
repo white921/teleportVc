@@ -12,6 +12,11 @@ import {
 import { DbService } from "./dbService";
 import { VcPanelService } from "./vcPanelService";
 import { getVcMembersCount } from "../util/vc";
+import {
+  addSecretPrefix,
+  isSecretChannel,
+  stripSecretPrefix,
+} from "../util/secret";
 import { TELEPORT_MESSAGE } from "../constant/message";
 
 interface TrackedVcRow {
@@ -157,7 +162,11 @@ export class TeleportVcService {
     if (!row) return;
     if (!row.auto_rename) return;
 
-    const desiredName = pickDesiredName(channel, row.owner_display_name);
+    let desiredName = pickDesiredName(channel, row.owner_display_name);
+    // シークレット適用中は🔒プレフィックスを維持する。
+    if (isSecretChannel(channel)) {
+      desiredName = addSecretPrefix(desiredName);
+    }
     if (desiredName === channel.name) return;
 
     const now = Date.now();
@@ -287,6 +296,75 @@ export class TeleportVcService {
     }
 
     await voiceChannel.permissionOverwrites.set(overwrites);
+
+    // VC名の先頭に🔒を付ける。
+    const locked = addSecretPrefix(voiceChannel.name);
+    if (locked !== voiceChannel.name) {
+      try {
+        await voiceChannel.setName(locked);
+        lastRenamedAt.set(voiceChannel.id, Date.now());
+      } catch (e: any) {
+        console.error("シークレットVC名変更エラー:", e?.message ?? e);
+      }
+    }
+  }
+
+  /**
+   * シークレット権限を解除する。
+   * 由来の転送用VCの権限を復元（取得できなければ上書きを除去して既定に戻す）し、
+   * VC名から🔒プレフィックスを取り除く。
+   */
+  static async releaseSecretPermissions(
+    voiceChannel: VoiceChannel,
+  ): Promise<void> {
+    const guild = voiceChannel.guild;
+    const parentVcId = await this.getParentVcId(voiceChannel.id);
+
+    let overwrites: any[] = [];
+    if (parentVcId) {
+      const parent =
+        guild.channels.cache.get(parentVcId) ??
+        (await guild.channels.fetch(parentVcId).catch(() => null));
+      if (parent && parent.type === ChannelType.GuildVoice) {
+        overwrites = Array.from(
+          (parent as VoiceChannel).permissionOverwrites.cache.values(),
+        ).map((o) => ({
+          id: o.id,
+          type: o.type,
+          allow: o.allow,
+          deny: o.deny,
+        }));
+      }
+    }
+
+    // Bot自身の権限を明示（作成時と同様）。
+    const botId = guild.members.me?.id;
+    if (botId && !overwrites.some((o) => o.id === botId)) {
+      overwrites.push({
+        id: botId,
+        type: OverwriteType.Member,
+        allow:
+          PermissionFlagsBits.ViewChannel |
+          PermissionFlagsBits.Connect |
+          PermissionFlagsBits.SendMessages |
+          PermissionFlagsBits.ManageChannels |
+          PermissionFlagsBits.MoveMembers,
+        deny: 0n,
+      });
+    }
+
+    await voiceChannel.permissionOverwrites.set(overwrites);
+
+    // VC名から🔒を取り除く。
+    const unlocked = stripSecretPrefix(voiceChannel.name);
+    if (unlocked !== voiceChannel.name) {
+      try {
+        await voiceChannel.setName(unlocked);
+        lastRenamedAt.set(voiceChannel.id, Date.now());
+      } catch (e: any) {
+        console.error("シークレット解除VC名変更エラー:", e?.message ?? e);
+      }
+    }
   }
 
   static async isTrackedVc(channelId: string): Promise<boolean> {
@@ -307,6 +385,23 @@ export class TeleportVcService {
       );
       if (!rows || rows.length === 0) return null;
       return rows[0] as TrackedVcRow;
+    } finally {
+      connection.release();
+    }
+  }
+
+  private static async getParentVcId(
+    channelId: string,
+  ): Promise<string | null> {
+    const connection = await DbService.getConnection();
+    try {
+      const [rows] = await connection.execute<any[]>(
+        `SELECT parent_vc_id FROM teleport_vcs
+         WHERE channel_id = ? AND is_active = TRUE`,
+        [channelId],
+      );
+      if (!rows || rows.length === 0) return null;
+      return rows[0].parent_vc_id as string;
     } finally {
       connection.release();
     }

@@ -38,9 +38,16 @@ export class VcPanelService {
         .setStyle(ButtonStyle.Danger),
     );
 
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(PANEL_COMMAND_NAMES.SECRET_RELEASE)
+        .setLabel(VC_PANEL_MESSAGES.SECRET_RELEASE)
+        .setStyle(ButtonStyle.Secondary),
+    );
+
     return {
       embeds: [embed],
-      components: [row],
+      components: [row, row2],
     };
   }
 }
