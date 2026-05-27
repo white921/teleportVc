@@ -1,20 +1,22 @@
 import mysql from "mysql2/promise";
 
-export class DbService {
-  private static pool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : undefined,
-
+function buildPool() {
+  const url = process.env.MYSQL_URL;
+  if (!url) {
+    throw new Error("MYSQL_URL is not set");
+  }
+  return mysql.createPool({
+    uri: url,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-
     supportBigNumbers: true,
     bigNumberStrings: true,
   });
+}
+
+export class DbService {
+  private static pool = buildPool();
 
   static async getConnection() {
     try {
