@@ -7,6 +7,11 @@ import {
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
+import {
+  addSecretPrefix,
+  isSecretChannel,
+  stripSecretPrefix,
+} from "../util/secret";
 
 export async function handleModalSubmit(
   interaction: ModalSubmitInteraction,
@@ -42,7 +47,11 @@ export async function handleModalSubmit(
         });
         return;
       }
-      await voiceChannel.setName(name);
+      // シークレット適用中は🔒プレフィックスを維持する（入力に含まれていても重複させない）。
+      const finalName = isSecretChannel(voiceChannel)
+        ? addSecretPrefix(name)
+        : stripSecretPrefix(name);
+      await voiceChannel.setName(finalName);
       // 手動リネームはユーザー意図優先 → 以降のゲーム名オート rename を停止
       await TeleportVcService.disableAutoRename(voiceChannel.id);
       await interaction.reply({
