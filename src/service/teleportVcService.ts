@@ -160,6 +160,20 @@ export class TeleportVcService {
     if (!row) return;
     if (!row.auto_rename) return;
 
+    // presence がキャッシュに無いメンバーは、presence 付きで取得し直してキャッシュを埋める。
+    // （Bot起動前からオンライン＆プレイ中で、以降 presence が変化していない人向け）
+    const missing = channel.members.filter((m) => !m.user.bot && !m.presence);
+    if (missing.size > 0) {
+      try {
+        await channel.guild.members.fetch({
+          user: Array.from(missing.keys()),
+          withPresences: true,
+        });
+      } catch (e: any) {
+        console.error("presence取得エラー:", e?.message ?? e);
+      }
+    }
+
     // デバッグ: Botのキャッシュが見ているVC内メンバーの presence を出力
     for (const m of channel.members.values()) {
       if (m.user.bot) continue;
