@@ -1,0 +1,313 @@
+import {
+  ActivityType,
+  ChannelType,
+  Client,
+  GuildBasedChannel,
+  GuildMember,
+  VoiceChannel,
+} from "discord.js";
+
+import { DbService } from "./dbService";
+import { VcPanelService } from "./vcPanelService";
+import { getVcMembersCount } from "../util/vc";
+import { TELEPORT_MESSAGE } from "../constant/message";
+
+interface TrackedVcRow {
+  channel_id: string;
+  owner_display_name: string;
+  has_been_occupied: number | boolean;
+  auto_rename: number | boolean;
+  is_active: number | boolean;
+}
+
+// チャンネル単位のリネームクールダウン（Discord のレート制限対策: 10分2回 → 5分間隔に絞る）
+const RENAME_COOLDOWN_MS = 5 * 60 * 1000;
+const lastRenamedAt = new Map<string, number>();
+
+export class TeleportVcService {
+  static async createTeleportVc(
+    member: GuildMember,
+    parentVc: VoiceChannel,
+  ): Promise<void> {
+    const guild = member.guild;
+    if (!guild) throw new Error(TELEPORT_MESSAGE.NOT_SERVER_FOUND);
+
+    const categoryId = parentVc.parentId;
+    if (!categoryId) throw new Error(TELEPORT_MESSAGE.NOT_CATEGORY_FOUND);
+
+    const permissionOverwrites = Array.from(
+      parentVc.permissionOverwrites.cache.values(),
+    ).map((o) => ({
+      id: o.id,
+      type: o.type,
+      allow: o.allow,
+      deny: o.deny,
+    }));
+
+    const defaultName = `${member.displayName}のVC`;
+
+    const voiceChannel = await guild.channels.create({
+      name: defaultName,
+      type: ChannelType.GuildVoice,
+      parent: categoryId,
+      permissionOverwrites,
+    });
+
+    await this.insertTeleportVc({
+      channelId: voiceChannel.id,
+      ownerId: member.id,
+      ownerDisplayName: member.displayName,
+      guildId: guild.id,
+      categoryId,
+      parentVcId: parentVc.id,
+    });
+
+    try {
+      const panel = VcPanelService.createVcPanel();
+      await voiceChannel.send(panel);
+    } catch (e) {
+      console.error("パネル送信エラー:", e);
+    }
+
+    try {
+      await member.voice.setChannel(voiceChannel.id);
+    } catch (e) {
+      console.error("VC移動エラー:", e);
+      try {
+        await voiceChannel.delete();
+      } catch {}
+      await this.markInactive(voiceChannel.id);
+      throw new Error(TELEPORT_MESSAGE.CREATE_FAILED);
+    }
+  }
+
+  static async markOccupiedIfTracked(channel: VoiceChannel): Promise<void> {
+    const row = await this.getTrackedVc(channel.id);
+    if (!row || row.has_been_occupied) return;
+    if (getVcMembersCount(channel) < 1) return;
+
+    const connection = await DbService.getConnection();
+    try {
+      await connection.execute(
+        `UPDATE teleport_vcs SET has_been_occupied = TRUE WHERE channel_id = ?`,
+        [channel.id],
+      );
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async deleteIfEmptyAfterOccupied(
+    channel: GuildBasedChannel,
+  ): Promise<void> {
+    if (channel.type !== ChannelType.GuildVoice) return;
+    const voiceChannel = channel as VoiceChannel;
+
+    const row = await this.getTrackedVc(voiceChannel.id);
+    if (!row) return;
+    if (!row.has_been_occupied) return;
+    if (getVcMembersCount(voiceChannel) !== 0) return;
+
+    try {
+      await voiceChannel.delete();
+    } catch (e) {
+      console.error("VC削除エラー:", e);
+      throw new Error(TELEPORT_MESSAGE.DELETE_FAILED);
+    }
+    lastRenamedAt.delete(voiceChannel.id);
+    await this.markInactive(voiceChannel.id);
+  }
+
+  /**
+   * VC 内で最多のプレイ中ゲーム名にリネームする。
+   * - auto_rename=FALSE の VC は対象外（手動で名前を変えた人の意図を尊重）
+   * - 誰もゲームしていない場合はオーナー表示名ベースの既定名に戻す
+   * - 5 分のクールダウンでレート制限回避
+   */
+  static async syncVcNameToTopGame(channel: VoiceChannel): Promise<void> {
+    const row = await this.getTrackedVc(channel.id);
+    if (!row) return;
+    if (!row.auto_rename) return;
+
+    const desiredName = pickDesiredName(channel, row.owner_display_name);
+    if (desiredName === channel.name) return;
+
+    const now = Date.now();
+    const last = lastRenamedAt.get(channel.id) ?? 0;
+    if (now - last < RENAME_COOLDOWN_MS) return;
+
+    try {
+      await channel.setName(desiredName);
+      lastRenamedAt.set(channel.id, now);
+    } catch (e: any) {
+      console.error("VCリネームエラー:", e?.message ?? e);
+    }
+  }
+
+  /**
+   * 手動でリネームされた VC は以降オート rename を停止する。
+   */
+  static async updateCategoryId(
+    channelId: string,
+    categoryId: string,
+  ): Promise<void> {
+    const connection = await DbService.getConnection();
+    try {
+      await connection.execute(
+        `UPDATE teleport_vcs SET category_id = ? WHERE channel_id = ?`,
+        [categoryId, channelId],
+      );
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async disableAutoRename(channelId: string): Promise<void> {
+    const connection = await DbService.getConnection();
+    try {
+      await connection.execute(
+        `UPDATE teleport_vcs SET auto_rename = FALSE WHERE channel_id = ?`,
+        [channelId],
+      );
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async cleanupOnStartup(client: Client): Promise<void> {
+    const connection = await DbService.getConnection();
+    let rows: any[] = [];
+    try {
+      const [r] = await connection.execute<any[]>(
+        `SELECT channel_id, guild_id FROM teleport_vcs WHERE is_active = TRUE`,
+      );
+      rows = r;
+    } finally {
+      connection.release();
+    }
+
+    for (const row of rows) {
+      try {
+        const guild = await client.guilds.fetch(row.guild_id).catch(() => null);
+        if (!guild) {
+          await this.markInactive(row.channel_id);
+          continue;
+        }
+        const ch = await guild.channels.fetch(row.channel_id).catch(() => null);
+        if (!ch || ch.type !== ChannelType.GuildVoice) {
+          await this.markInactive(row.channel_id);
+          continue;
+        }
+        const voiceChannel = ch as VoiceChannel;
+        if (getVcMembersCount(voiceChannel) === 0) {
+          try {
+            await voiceChannel.delete();
+          } catch {}
+          await this.markInactive(row.channel_id);
+        }
+      } catch (e) {
+        console.error("cleanupOnStartupエラー:", e);
+      }
+    }
+  }
+
+  static async isTrackedVc(channelId: string): Promise<boolean> {
+    const row = await this.getTrackedVc(channelId);
+    return !!row;
+  }
+
+  private static async getTrackedVc(
+    channelId: string,
+  ): Promise<TrackedVcRow | null> {
+    const connection = await DbService.getConnection();
+    try {
+      const [rows] = await connection.execute<any[]>(
+        `SELECT channel_id, owner_display_name, has_been_occupied, auto_rename, is_active
+         FROM teleport_vcs
+         WHERE channel_id = ? AND is_active = TRUE`,
+        [channelId],
+      );
+      if (!rows || rows.length === 0) return null;
+      return rows[0] as TrackedVcRow;
+    } finally {
+      connection.release();
+    }
+  }
+
+  private static async insertTeleportVc(args: {
+    channelId: string;
+    ownerId: string;
+    ownerDisplayName: string;
+    guildId: string;
+    categoryId: string;
+    parentVcId: string;
+  }): Promise<void> {
+    const connection = await DbService.getConnection();
+    try {
+      await connection.execute(
+        `INSERT INTO teleport_vcs
+          (channel_id, owner_id, owner_display_name, guild_id, category_id, parent_vc_id,
+           has_been_occupied, auto_rename, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, FALSE, TRUE, TRUE)`,
+        [
+          args.channelId,
+          args.ownerId,
+          args.ownerDisplayName,
+          args.guildId,
+          args.categoryId,
+          args.parentVcId,
+        ],
+      );
+    } finally {
+      connection.release();
+    }
+  }
+
+  private static async markInactive(channelId: string): Promise<void> {
+    const connection = await DbService.getConnection();
+    try {
+      await connection.execute(
+        `UPDATE teleport_vcs SET is_active = FALSE WHERE channel_id = ?`,
+        [channelId],
+      );
+    } finally {
+      connection.release();
+    }
+  }
+}
+
+/**
+ * VC内メンバーのプレイ中ゲームを集計して最多のゲーム名を返す。
+ * 同点ならアルファベット順で先頭。誰もプレイしていなければ既定名。
+ */
+function pickDesiredName(
+  channel: VoiceChannel,
+  ownerDisplayName: string,
+): string {
+  const counts = new Map<string, number>();
+
+  for (const member of channel.members.values()) {
+    if (member.user.bot) continue;
+    const activities = member.presence?.activities ?? [];
+    const gameNames = new Set<string>();
+    for (const activity of activities) {
+      if (activity.type !== ActivityType.Playing) continue;
+      if (!activity.name) continue;
+      gameNames.add(activity.name.trim());
+    }
+    for (const name of gameNames) {
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  }
+
+  if (counts.size === 0) {
+    return `${ownerDisplayName}のVC`;
+  }
+
+  const sorted = Array.from(counts.entries()).sort((a, b) => {
+    if (b[1] !== a[1]) return b[1] - a[1];
+    return a[0].localeCompare(b[0]);
+  });
+  // Discord のチャンネル名上限は 100 文字
+  return sorted[0][0].slice(0, 100);
+}
