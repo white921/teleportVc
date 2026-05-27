@@ -6,6 +6,7 @@ export const PANEL_COMMAND_NAMES = {
   CATEGORY_SELECT: "teleport_category_select",
   SECRET: "teleport_secret",
   SECRET_USER_SELECT: "teleport_secret_user_select",
+  SECRET_CONFIRM: "teleport_secret_confirm",
 } as const;
 
 export const MODAL_INPUT_IDS = {

@@ -4,17 +4,21 @@ export const VC_PANEL_MESSAGES = {
     "このVCの設定を変更できます。\n" +
     "・人数制限: 0〜99（0で無制限）\n" +
     "・VC名: 任意の名前\n" +
-    "・ステータス: VC上部に表示される一文（空欄でクリア）",
+    "・ステータス: VC上部に表示される一文",
   CHANGE_VC_NAME: "VC名を変更",
   CHANGE_VC_LIMIT: "人数制限を変更",
   CHANGE_VC_STATUS: "ステータスを変更",
   CHANGE_CATEGORY: "カテゴリを移動",
   CATEGORY_SELECT_PLACEHOLDER: "移動先カテゴリを選択",
   SECRET: "シークレット",
-  SECRET_USER_SELECT_PLACEHOLDER:
-    "追加で許可するユーザーを選択（最大25人）",
-  SECRET_DESCRIPTION:
-    "@everyoneの閲覧・接続を遮断し、現在VC内のメンバー＋選択したユーザーのみがアクセスできるようになります。",
+  SECRET_USER_SELECT_PLACEHOLDER: "許可するユーザーを選択（1人ずつ追加）",
+  SECRET_CONFIRM: "確定",
+  SECRET_EMBED_TITLE: "シークレット設定",
+  SECRET_EMBED_DESC:
+    "セレクトから1人ずつ追加してください。\n" +
+    "「確定」を押すと、現在VC内のメンバーと追加したメンバーだけが閲覧・接続できるようになります。",
+  SECRET_SELECTED_LABEL: "追加済みメンバー",
+  SECRET_SELECTED_NONE: "なし",
 } as const;
 
 export const MODAL_TITLES = {

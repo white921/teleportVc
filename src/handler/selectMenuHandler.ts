@@ -1,8 +1,6 @@
 import {
   ChannelSelectMenuInteraction,
   ChannelType,
-  OverwriteType,
-  PermissionFlagsBits,
   UserSelectMenuInteraction,
   VoiceChannel,
 } from "discord.js";
@@ -10,6 +8,7 @@ import {
 import { PANEL_COMMAND_NAMES } from "../constant/command";
 import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
+import { buildSecretComponents, buildSecretEmbed, parseSecretUserIds } from "../util/secret";
 
 export async function handleChannelSelectMenu(
   interaction: ChannelSelectMenuInteraction,
@@ -88,57 +87,15 @@ export async function handleUserSelectMenu(
     return;
   }
 
-  // 許可ユーザー = 現在VC内の非Botメンバー + セレクトメニュー選択ユーザー
-  const allowedUserIds = new Set<string>();
-  for (const member of voiceChannel.members.values()) {
-    if (member.user.bot) continue;
-    allowedUserIds.add(member.id);
-  }
+  // 既存の追加済みメンバー（embedのメンションから読み戻す）に今回の選択を加える。
+  const existing = parseSecretUserIds(interaction.message.embeds[0]?.description);
+  const userIds = new Set<string>(existing);
   for (const userId of interaction.values) {
-    allowedUserIds.add(userId);
+    userIds.add(userId);
   }
 
-  const botId = interaction.client.user?.id;
-
-  const overwrites = [
-    {
-      id: guild.roles.everyone.id,
-      type: OverwriteType.Role,
-      deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
-    },
-    ...Array.from(allowedUserIds).map((userId) => ({
-      id: userId,
-      type: OverwriteType.Member,
-      allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
-    })),
-  ];
-
-  // Bot自身も管理のため許可（既にロールで権限を持っていても明示）
-  if (botId && !allowedUserIds.has(botId)) {
-    overwrites.push({
-      id: botId,
-      type: OverwriteType.Member,
-      allow: [
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.Connect,
-        PermissionFlagsBits.ManageChannels,
-      ],
-    });
-  }
-
-  try {
-    await voiceChannel.permissionOverwrites.set(overwrites);
-  } catch (e: any) {
-    console.error("シークレット適用エラー:", e?.message ?? e);
-    await interaction.reply({
-      content: PANEL_MESSAGE.SECRET_FAILED,
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await interaction.reply({
-    content: PANEL_MESSAGE.SECRET_APPLIED,
-    ephemeral: true,
+  await interaction.update({
+    embeds: [buildSecretEmbed(Array.from(userIds))],
+    components: buildSecretComponents(),
   });
 }

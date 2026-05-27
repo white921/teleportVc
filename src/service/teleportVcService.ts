@@ -239,6 +239,56 @@ export class TeleportVcService {
     }
   }
 
+  /**
+   * シークレット権限を適用する。
+   * @everyone の閲覧・接続を拒否し、現在VC内の非Botメンバー + 追加で指定された
+   * ユーザーのみに閲覧・接続を許可する。Bot自身も管理のため明示的に許可する。
+   */
+  static async applySecretPermissions(
+    voiceChannel: VoiceChannel,
+    additionalUserIds: string[],
+  ): Promise<void> {
+    const guild = voiceChannel.guild;
+
+    const allowedUserIds = new Set<string>();
+    for (const member of voiceChannel.members.values()) {
+      if (member.user.bot) continue;
+      allowedUserIds.add(member.id);
+    }
+    for (const userId of additionalUserIds) {
+      allowedUserIds.add(userId);
+    }
+
+    const botId = guild.members.me?.id;
+
+    const overwrites: any[] = [
+      {
+        id: guild.roles.everyone.id,
+        type: OverwriteType.Role,
+        deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+      },
+      ...Array.from(allowedUserIds).map((userId) => ({
+        id: userId,
+        type: OverwriteType.Member,
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+      })),
+    ];
+
+    if (botId && !allowedUserIds.has(botId)) {
+      overwrites.push({
+        id: botId,
+        type: OverwriteType.Member,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.Connect,
+          PermissionFlagsBits.ManageChannels,
+        ],
+      });
+    }
+
+    await voiceChannel.permissionOverwrites.set(overwrites);
+  }
+
   static async isTrackedVc(channelId: string): Promise<boolean> {
     const row = await this.getTrackedVc(channelId);
     return !!row;

@@ -6,13 +6,18 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  UserSelectMenuBuilder,
+  VoiceChannel,
 } from "discord.js";
 
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { MODAL_LABELS, MODAL_TITLES, VC_PANEL_MESSAGES } from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
 import { PANEL_MESSAGE } from "../constant/message";
+import {
+  buildSecretComponents,
+  buildSecretEmbed,
+  parseSecretUserIds,
+} from "../util/secret";
 
 export async function handlePanelButton(
   interaction: ButtonInteraction,
@@ -51,22 +56,40 @@ export async function handlePanelButton(
     case PANEL_COMMAND_NAMES.SECRET:
       await showSecretUserSelect(interaction);
       return;
+    case PANEL_COMMAND_NAMES.SECRET_CONFIRM:
+      await applySecretFromPanel(interaction);
+      return;
   }
 }
 
 async function showSecretUserSelect(interaction: ButtonInteraction) {
-  const select = new UserSelectMenuBuilder()
-    .setCustomId(PANEL_COMMAND_NAMES.SECRET_USER_SELECT)
-    .setPlaceholder(VC_PANEL_MESSAGES.SECRET_USER_SELECT_PLACEHOLDER)
-    .setMinValues(0)
-    .setMaxValues(25);
-
   await interaction.reply({
-    content: VC_PANEL_MESSAGES.SECRET_DESCRIPTION,
-    components: [
-      new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(select),
-    ],
+    embeds: [buildSecretEmbed([])],
+    components: buildSecretComponents(),
     ephemeral: true,
+  });
+}
+
+async function applySecretFromPanel(interaction: ButtonInteraction) {
+  const voiceChannel = interaction.channel as VoiceChannel;
+  const userIds = parseSecretUserIds(interaction.message.embeds[0]?.description);
+
+  try {
+    await TeleportVcService.applySecretPermissions(voiceChannel, userIds);
+  } catch (e: any) {
+    console.error("シークレット適用エラー:", e?.message ?? e);
+    await interaction.update({
+      content: PANEL_MESSAGE.SECRET_FAILED,
+      embeds: [],
+      components: [],
+    });
+    return;
+  }
+
+  await interaction.update({
+    content: PANEL_MESSAGE.SECRET_APPLIED,
+    embeds: [],
+    components: [],
   });
 }
 
