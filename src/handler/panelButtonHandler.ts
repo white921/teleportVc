@@ -16,7 +16,7 @@ import { PANEL_MESSAGE } from "../constant/message";
 import {
   buildSecretComponents,
   buildSecretEmbed,
-  getCurrentVcMemberIds,
+  getInitialSecretMemberIds,
   parseSecretUserIds,
 } from "../util/secret";
 
@@ -77,20 +77,20 @@ export async function handlePanelButton(
 
 async function clearSecretSelection(interaction: ButtonInteraction) {
   const voiceChannel = interaction.channel as VoiceChannel;
-  // 追加分のみリセットし、現在VCにいるメンバーは表示として残す。
-  const currentMemberIds = getCurrentVcMemberIds(voiceChannel);
+  // 手動追加分のみリセットし、初期状態（VC内メンバー＋既存の閲覧許可メンバー）に戻す。
+  const initialMemberIds = getInitialSecretMemberIds(voiceChannel);
   await interaction.update({
-    embeds: [buildSecretEmbed(currentMemberIds)],
+    embeds: [buildSecretEmbed(initialMemberIds)],
     components: buildSecretComponents(),
   });
 }
 
 async function showSecretUserSelect(interaction: ButtonInteraction) {
   const voiceChannel = interaction.channel as VoiceChannel;
-  // 現在VCにいるメンバーは必ずアクセス権を得るため、最初から追加済みとして表示する。
-  const currentMemberIds = getCurrentVcMemberIds(voiceChannel);
+  // VC内メンバー＋既に閲覧権限を持つメンバーを最初から表示する。
+  const initialMemberIds = getInitialSecretMemberIds(voiceChannel);
   await interaction.reply({
-    embeds: [buildSecretEmbed(currentMemberIds)],
+    embeds: [buildSecretEmbed(initialMemberIds)],
     components: buildSecretComponents(),
     ephemeral: true,
   });

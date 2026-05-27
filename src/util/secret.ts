@@ -3,6 +3,8 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  OverwriteType,
+  PermissionFlagsBits,
   UserSelectMenuBuilder,
   VoiceChannel,
 } from "discord.js";
@@ -20,6 +22,37 @@ export function getCurrentVcMemberIds(voiceChannel: VoiceChannel): string[] {
   return voiceChannel.members
     .filter((m) => !m.user.bot)
     .map((m) => m.id);
+}
+
+/**
+ * 「権限ページに名前が載っている」＝メンバー単位の権限上書きで
+ * 閲覧(ViewChannel)が明示的に許可されているメンバーのID一覧を返す。
+ * ロールや管理者権限による閲覧は対象外（メンバー上書きのみ）。Bot自身は除外。
+ */
+export function getExplicitViewMemberIds(voiceChannel: VoiceChannel): string[] {
+  const botId = voiceChannel.client.user?.id;
+  const ids: string[] = [];
+  for (const overwrite of voiceChannel.permissionOverwrites.cache.values()) {
+    if (overwrite.type !== OverwriteType.Member) continue;
+    if (overwrite.id === botId) continue;
+    if (overwrite.allow.has(PermissionFlagsBits.ViewChannel)) {
+      ids.push(overwrite.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * シークレットパネルを開いた直後に「権限を付与するメンバー」として
+ * 表示する初期メンバー（VC内メンバー + 明示的に閲覧権限を持つメンバー）を返す。
+ */
+export function getInitialSecretMemberIds(voiceChannel: VoiceChannel): string[] {
+  return Array.from(
+    new Set([
+      ...getCurrentVcMemberIds(voiceChannel),
+      ...getExplicitViewMemberIds(voiceChannel),
+    ]),
+  );
 }
 
 /**
