@@ -2,12 +2,11 @@ export const VC_PANEL_MESSAGES = {
   TITLE: "VC操作パネル",
   DESCRIPTION:
     "このVCの設定を変更できます。\n" +
-    "・人数制限: 0〜99（0で無制限）\n" +
     "・VC名: 任意の名前\n" +
-    "・ステータス: VC上部に表示される一文",
-  CHANGE_VC_NAME: "VC名を変更",
-  CHANGE_VC_LIMIT: "人数制限を変更",
-  CHANGE_VC_STATUS: "ステータスを変更",
+    "・ステータス: VC上部に表示される一文\n" +
+    "・人数制限: 0〜99（0で無制限）",
+  CHANGE_VC_SETTINGS: "VC設定を変更",
+  VIEW_PERMISSIONS: "権限を確認",
   CHANGE_CATEGORY: "カテゴリを移動",
   CATEGORY_SELECT_PLACEHOLDER: "移動先カテゴリを選択",
   SECRET: "シークレット",
@@ -25,13 +24,11 @@ export const VC_PANEL_MESSAGES = {
 } as const;
 
 export const MODAL_TITLES = {
-  CHANGE_VC_NAME: "VC名の変更",
-  CHANGE_VC_LIMIT: "人数制限の変更",
-  CHANGE_VC_STATUS: "ステータスの変更",
+  CHANGE_VC_SETTINGS: "VC設定の変更",
 } as const;
 
 export const MODAL_LABELS = {
-  VC_NAME: "新しいVC名",
-  VC_LIMIT: "人数制限 (0〜99、0で無制限)",
+  VC_NAME: "VC名",
   VC_STATUS: "ステータス (空欄で解除)",
+  VC_LIMIT: "人数制限 (0〜99、0で無制限)",
 } as const;

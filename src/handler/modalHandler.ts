@@ -8,6 +8,10 @@ import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
 import {
+  getVoiceChannelStatus,
+  setVoiceChannelStatus,
+} from "../service/voiceChannelStatus";
+import {
   addSecretPrefix,
   hasSecretPrefix,
   stripSecretPrefix,
@@ -35,84 +39,75 @@ export async function handleModalSubmit(
     return;
   }
 
-  switch (interaction.customId) {
-    case PANEL_COMMAND_NAMES.CHANGE_VC_NAME: {
-      const name = interaction.fields
-        .getTextInputValue(MODAL_INPUT_IDS.VC_NAME)
-        .trim();
-      if (name.length === 0 || name.length > 100) {
-        await interaction.reply({
-          content: PANEL_MESSAGE.NAME_TOO_LONG,
-          ephemeral: true,
-        });
-        return;
-      }
-      // シークレット適用中（VC名に🔒が付いている）は🔒プレフィックスを維持する
-      // （入力に含まれていても重複させない）。
-      const finalName = hasSecretPrefix(voiceChannel.name)
-        ? addSecretPrefix(name)
-        : stripSecretPrefix(name);
-      await voiceChannel.setName(finalName);
-      // 手動リネームはユーザー意図優先 → 以降のゲーム名オート rename を停止
-      await TeleportVcService.disableAutoRename(voiceChannel.id);
-      await interaction.reply({
-        content: PANEL_MESSAGE.UPDATED_NAME,
-        ephemeral: true,
-      });
-      return;
-    }
+  if (interaction.customId !== PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS) return;
 
-    case PANEL_COMMAND_NAMES.CHANGE_VC_LIMIT: {
-      const raw = interaction.fields
-        .getTextInputValue(MODAL_INPUT_IDS.VC_LIMIT)
-        .trim();
-      const limit = Number(raw);
-      if (!Number.isInteger(limit) || limit < 0 || limit > 99) {
-        await interaction.reply({
-          content: PANEL_MESSAGE.INVALID_LIMIT,
-          ephemeral: true,
-        });
-        return;
-      }
-      await voiceChannel.setUserLimit(limit);
-      await interaction.reply({
-        content: PANEL_MESSAGE.UPDATED_LIMIT,
-        ephemeral: true,
-      });
-      return;
-    }
+  const nameRaw = interaction.fields
+    .getTextInputValue(MODAL_INPUT_IDS.VC_NAME)
+    .trim();
+  const statusRaw = interaction.fields
+    .getTextInputValue(MODAL_INPUT_IDS.VC_STATUS)
+    .trim();
+  const limitRaw = interaction.fields
+    .getTextInputValue(MODAL_INPUT_IDS.VC_LIMIT)
+    .trim();
 
-    case PANEL_COMMAND_NAMES.CHANGE_VC_STATUS: {
-      const status = interaction.fields
-        .getTextInputValue(MODAL_INPUT_IDS.VC_STATUS)
-        .trim();
-      if (status.length > 500) {
-        await interaction.reply({
-          content: PANEL_MESSAGE.STATUS_TOO_LONG,
-          ephemeral: true,
-        });
-        return;
-      }
-      await setVoiceChannelStatus(voiceChannel, status);
-      await interaction.reply({
-        content:
-          status.length === 0
-            ? PANEL_MESSAGE.CLEARED_STATUS
-            : PANEL_MESSAGE.UPDATED_STATUS,
-        ephemeral: true,
-      });
-      return;
-    }
+  // バリデーション（全項目チェックしてから一括適用。NGなら何も変更しない）
+  if (nameRaw.length === 0 || nameRaw.length > 100) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.NAME_TOO_LONG,
+      ephemeral: true,
+    });
+    return;
   }
-}
+  if (statusRaw.length > 500) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.STATUS_TOO_LONG,
+      ephemeral: true,
+    });
+    return;
+  }
+  const limit = Number(limitRaw);
+  if (!Number.isInteger(limit) || limit < 0 || limit > 99) {
+    await interaction.reply({
+      content: PANEL_MESSAGE.INVALID_LIMIT,
+      ephemeral: true,
+    });
+    return;
+  }
 
-// discord.js v14 では公式メソッドが未提供のことがあるので REST 経由で叩く。
-async function setVoiceChannelStatus(
-  channel: VoiceChannel,
-  status: string,
-): Promise<void> {
-  // @ts-ignore — Routes に voiceChannelStatus が無いバージョンに対応するため文字列で組む
-  await channel.client.rest.put(`/channels/${channel.id}/voice-status`, {
-    body: { status },
+  // 現在値と比較し、変わったものだけ適用する。
+  const currentName = stripSecretPrefix(voiceChannel.name);
+  const currentStatus = await getVoiceChannelStatus(voiceChannel);
+  const currentLimit = voiceChannel.userLimit;
+
+  const changed: string[] = [];
+
+  if (nameRaw !== currentName) {
+    const finalName = hasSecretPrefix(voiceChannel.name)
+      ? addSecretPrefix(nameRaw)
+      : nameRaw;
+    await voiceChannel.setName(finalName);
+    // 手動リネームはユーザー意図優先 → 以降のゲーム名オート rename を停止
+    await TeleportVcService.disableAutoRename(voiceChannel.id);
+    changed.push(PANEL_MESSAGE.UPDATED_NAME);
+  }
+
+  if (statusRaw !== currentStatus) {
+    await setVoiceChannelStatus(voiceChannel, statusRaw);
+    changed.push(
+      statusRaw.length === 0
+        ? PANEL_MESSAGE.CLEARED_STATUS
+        : PANEL_MESSAGE.UPDATED_STATUS,
+    );
+  }
+
+  if (limit !== currentLimit) {
+    await voiceChannel.setUserLimit(limit);
+    changed.push(PANEL_MESSAGE.UPDATED_LIMIT);
+  }
+
+  await interaction.reply({
+    content: changed.length === 0 ? PANEL_MESSAGE.NO_CHANGES : changed.join("\n"),
+    ephemeral: true,
   });
 }

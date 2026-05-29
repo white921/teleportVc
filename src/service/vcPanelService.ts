@@ -17,16 +17,12 @@ export class VcPanelService {
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_NAME)
-        .setLabel(VC_PANEL_MESSAGES.CHANGE_VC_NAME)
+        .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS)
+        .setLabel(VC_PANEL_MESSAGES.CHANGE_VC_SETTINGS)
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_LIMIT)
-        .setLabel(VC_PANEL_MESSAGES.CHANGE_VC_LIMIT)
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_STATUS)
-        .setLabel(VC_PANEL_MESSAGES.CHANGE_VC_STATUS)
+        .setCustomId(PANEL_COMMAND_NAMES.VIEW_PERMISSIONS)
+        .setLabel(VC_PANEL_MESSAGES.VIEW_PERMISSIONS)
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(PANEL_COMMAND_NAMES.CHANGE_CATEGORY)
