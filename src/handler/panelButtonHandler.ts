@@ -12,12 +12,15 @@ import {
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { MODAL_LABELS, MODAL_TITLES, VC_PANEL_MESSAGES } from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
+import { getVoiceChannelStatus } from "../service/voiceChannelStatus";
+import { buildPermissionSummaryEmbed } from "../util/permissionSummary";
 import { PANEL_MESSAGE } from "../constant/message";
 import {
   buildSecretComponents,
   buildSecretEmbed,
   getInitialSecretMemberIds,
   parseSecretUserIds,
+  stripSecretPrefix,
 } from "../util/secret";
 
 export async function handlePanelButton(
@@ -51,14 +54,11 @@ export async function handlePanelButton(
   }
 
   switch (interaction.customId) {
-    case PANEL_COMMAND_NAMES.CHANGE_VC_NAME:
-      await showNameModal(interaction);
+    case PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS:
+      await showSettingsModal(interaction, channel as VoiceChannel);
       return;
-    case PANEL_COMMAND_NAMES.CHANGE_VC_LIMIT:
-      await showLimitModal(interaction);
-      return;
-    case PANEL_COMMAND_NAMES.CHANGE_VC_STATUS:
-      await showStatusModal(interaction);
+    case PANEL_COMMAND_NAMES.VIEW_PERMISSIONS:
+      await showPermissionSummary(interaction, channel as VoiceChannel);
       return;
     case PANEL_COMMAND_NAMES.CHANGE_CATEGORY:
       await showCategorySelect(interaction);
@@ -136,51 +136,62 @@ async function showCategorySelect(interaction: ButtonInteraction) {
   });
 }
 
-async function showNameModal(interaction: ButtonInteraction) {
+async function showPermissionSummary(
+  interaction: ButtonInteraction,
+  voiceChannel: VoiceChannel,
+) {
+  await interaction.reply({
+    embeds: [buildPermissionSummaryEmbed(voiceChannel)],
+    ephemeral: true,
+  });
+}
+
+async function showSettingsModal(
+  interaction: ButtonInteraction,
+  voiceChannel: VoiceChannel,
+) {
+  // シークレット中の🔒はモーダルからは隠す（送信時に状態に応じて付け直す）。
+  const currentName = stripSecretPrefix(voiceChannel.name);
+  const currentStatus = await getVoiceChannelStatus(voiceChannel);
+  const currentLimit = String(voiceChannel.userLimit);
+
   const modal = new ModalBuilder()
-    .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_NAME)
-    .setTitle(MODAL_TITLES.CHANGE_VC_NAME);
-  const input = new TextInputBuilder()
+    .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS)
+    .setTitle(MODAL_TITLES.CHANGE_VC_SETTINGS);
+
+  const nameInput = new TextInputBuilder()
     .setCustomId(MODAL_INPUT_IDS.VC_NAME)
     .setLabel(MODAL_LABELS.VC_NAME)
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
-    .setMaxLength(100);
-  modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(input),
-  );
-  await interaction.showModal(modal);
-}
-
-async function showLimitModal(interaction: ButtonInteraction) {
-  const modal = new ModalBuilder()
-    .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_LIMIT)
-    .setTitle(MODAL_TITLES.CHANGE_VC_LIMIT);
-  const input = new TextInputBuilder()
-    .setCustomId(MODAL_INPUT_IDS.VC_LIMIT)
-    .setLabel(MODAL_LABELS.VC_LIMIT)
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true)
     .setMinLength(1)
-    .setMaxLength(2);
-  modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(input),
-  );
-  await interaction.showModal(modal);
-}
+    .setMaxLength(100)
+    .setValue(currentName);
 
-async function showStatusModal(interaction: ButtonInteraction) {
-  const modal = new ModalBuilder()
-    .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_STATUS)
-    .setTitle(MODAL_TITLES.CHANGE_VC_STATUS);
-  const input = new TextInputBuilder()
+  const statusInput = new TextInputBuilder()
     .setCustomId(MODAL_INPUT_IDS.VC_STATUS)
     .setLabel(MODAL_LABELS.VC_STATUS)
     .setStyle(TextInputStyle.Short)
     .setRequired(false)
     .setMaxLength(500);
+  if (currentStatus.length > 0) {
+    statusInput.setValue(currentStatus);
+  }
+
+  const limitInput = new TextInputBuilder()
+    .setCustomId(MODAL_INPUT_IDS.VC_LIMIT)
+    .setLabel(MODAL_LABELS.VC_LIMIT)
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setMinLength(1)
+    .setMaxLength(2)
+    .setValue(currentLimit);
+
   modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(input),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(statusInput),
+    new ActionRowBuilder<TextInputBuilder>().addComponents(limitInput),
   );
+
   await interaction.showModal(modal);
 }

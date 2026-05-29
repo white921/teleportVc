@@ -16,6 +16,7 @@ export const PANEL_MESSAGE = {
   UPDATED_LIMIT: "人数制限を変更しました。",
   UPDATED_STATUS: "ステータスを変更しました。",
   CLEARED_STATUS: "ステータスを解除しました。",
+  NO_CHANGES: "変更はありません。",
   UPDATED_CATEGORY: "カテゴリを移動しました。",
   INVALID_CATEGORY: "選択したチャンネルがカテゴリではありません。",
   CATEGORY_MOVE_FAILED: "カテゴリ移動に失敗しました。Botの権限を確認してください。",
