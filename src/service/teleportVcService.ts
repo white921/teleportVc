@@ -26,7 +26,7 @@ interface TrackedVcRow {
 // チャンネル単位のリネームクールダウン。
 // 注意: Discord のチャンネル名変更は「10分に2回」のレート制限があるため、
 // 短くしすぎると頻繁なゲーム切り替えで上限に当たり VCリネームエラー になり得る。
-const RENAME_COOLDOWN_MS = 30 * 1000;
+const RENAME_COOLDOWN_MS = 5 * 60 * 1000;
 const lastRenamedAt = new Map<string, number>();
 
 export class TeleportVcService {
