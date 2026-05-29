@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 
 import { PANEL_COMMAND_NAMES } from "../constant/command";
+import { EXCLUDED_USER_IDS } from "../constant/id";
 import { VC_PANEL_MESSAGES } from "../constant/panel";
 
 // シークレット適用中のVC名に付けるプレフィックス。
@@ -30,11 +31,14 @@ export function getCurrentVcMemberIds(voiceChannel: VoiceChannel): string[] {
  * ロールや管理者権限による閲覧は対象外（メンバー上書きのみ）。Bot自身は除外。
  */
 export function getExplicitViewMemberIds(voiceChannel: VoiceChannel): string[] {
-  const botId = voiceChannel.client.user?.id;
+  const guild = voiceChannel.guild;
   const ids: string[] = [];
   for (const overwrite of voiceChannel.permissionOverwrites.cache.values()) {
     if (overwrite.type !== OverwriteType.Member) continue;
-    if (overwrite.id === botId) continue;
+    if (EXCLUDED_USER_IDS.includes(overwrite.id)) continue;
+    // Bot は除外。
+    const member = guild.members.cache.get(overwrite.id);
+    if (member?.user.bot) continue;
     if (overwrite.allow.has(PermissionFlagsBits.ViewChannel)) {
       ids.push(overwrite.id);
     }

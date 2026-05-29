@@ -5,6 +5,12 @@ export const TELEPORT_VC_IDS: string[] = [
   "1509105439336304661",
 ];
 
+// 権限確認 / シークレット設定パネルから常に除外したいユーザー（Bot）のID一覧。
+// guild.members.cache に乗っておらず .user.bot 判定が外れるケースの保険として効く。
+export const EXCLUDED_USER_IDS: string[] = [
+  "1427233209976098897",
+];
+
 // 音楽ボット・読み上げボットなど、入室したら人数制限を+1、退室したら-1する対象ボットのID一覧。
 // ここにボットのユーザーIDを足すだけで対象になる（人数制限が「無制限(0)」のVCでは調整しない）。
 export const MANAGED_BOT_IDS: string[] = [
