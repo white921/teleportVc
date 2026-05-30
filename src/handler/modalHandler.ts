@@ -77,7 +77,7 @@ export async function handleModalSubmit(
 
   // 現在値と比較し、変わったものだけ適用する。
   const currentName = stripSecretPrefix(voiceChannel.name);
-  const currentStatus = await getVoiceChannelStatus(voiceChannel);
+  const currentStatus = getVoiceChannelStatus(voiceChannel);
   const currentLimit = voiceChannel.userLimit;
 
   const changed: string[] = [];

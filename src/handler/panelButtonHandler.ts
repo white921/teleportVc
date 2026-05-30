@@ -152,7 +152,7 @@ async function showSettingsModal(
 ) {
   // シークレット中の🔒はモーダルからは隠す（送信時に状態に応じて付け直す）。
   const currentName = stripSecretPrefix(voiceChannel.name);
-  const currentStatus = await getVoiceChannelStatus(voiceChannel);
+  const currentStatus = getVoiceChannelStatus(voiceChannel);
   const currentLimit = String(voiceChannel.userLimit);
 
   const modal = new ModalBuilder()
