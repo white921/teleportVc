@@ -61,7 +61,6 @@ export class TeleportVcService {
           PermissionFlagsBits.Connect |
           PermissionFlagsBits.SendMessages |
           PermissionFlagsBits.ManageChannels |
-          PermissionFlagsBits.ManageMessages |
           PermissionFlagsBits.MoveMembers,
         deny: 0n,
       } as any);
@@ -104,20 +103,11 @@ export class TeleportVcService {
       throw new Error(TELEPORT_MESSAGE.CREATE_FAILED);
     }
 
-    // 続いて新VCのインチャ（ボイスチャンネル内テキストチャット）にパネル送信＆ピン留め。
-    // ピン留めしておくことでチャットが流れてもピンアイコンから常にアクセスできる。
+    // 続いて新VCのインチャ（ボイスチャンネル内テキストチャット）にパネル送信。
+    // チャットが流れた場合はパネル上の「パネルを再配置」ボタンで最下部に出し直せる。
     try {
       const panel = VcPanelService.createVcPanel();
-      const panelMessage = await voiceChannel.send(panel);
-      try {
-        await panelMessage.pin();
-      } catch (e: any) {
-        console.error(
-          "パネルピン留めエラー:",
-          e?.message ?? e,
-          `(channel=${voiceChannel.id})`,
-        );
-      }
+      await voiceChannel.send(panel);
     } catch (e: any) {
       console.error(
         "パネル送信エラー:",
