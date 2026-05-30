@@ -19,11 +19,14 @@ export function buildPermissionSummaryEmbed(
   voiceChannel: VoiceChannel,
 ): EmbedBuilder {
   const secret = hasSecretPrefix(voiceChannel.name);
+  const limitLine = `**人数制限**: ${
+    voiceChannel.userLimit === 0 ? "無制限" : `${voiceChannel.userLimit}人`
+  }`;
 
   if (!secret) {
     return new EmbedBuilder()
       .setTitle(`「${voiceChannel.name}」の権限`)
-      .setDescription("**公開モード**")
+      .setDescription(`**公開モード**\n\n${limitLine}`)
       .setColor(0x66ccff);
   }
 
@@ -61,6 +64,8 @@ export function buildPermissionSummaryEmbed(
   lines.push(
     "※ シークレット中のため、上記の「閲覧・接続できるメンバー」に含まれない人は閲覧・接続ができません。",
   );
+  lines.push("");
+  lines.push(limitLine);
 
   return new EmbedBuilder()
     .setTitle(`「${voiceChannel.name}」の権限`)
