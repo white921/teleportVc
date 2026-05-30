@@ -5,12 +5,14 @@ export const VC_PANEL_MESSAGES = {
     "・VC設定を変更: VC名 / ステータス / 人数制限 をまとめて変更\n" +
     "・権限を確認: 公開/シークレット状態と人数制限を表示\n" +
     "・カテゴリを移動: 親カテゴリを変更\n" +
-    "・シークレット: 指定メンバーだけが入れる非公開VCにする",
+    "・シークレット: 指定メンバーだけが入れる非公開VCにする\n" +
+    "・パネルを再配置: チャットで流れたパネルを最下部に出し直す",
   CHANGE_VC_SETTINGS: "VC設定を変更",
   VIEW_PERMISSIONS: "権限を確認",
   CHANGE_CATEGORY: "カテゴリを移動",
   CATEGORY_SELECT_PLACEHOLDER: "移動先カテゴリを選択",
   SECRET: "シークレット",
+  RELOCATE_PANEL: "パネルを再配置",
   SECRET_USER_SELECT_PLACEHOLDER: "許可するユーザーを選択",
   SECRET_CONFIRM: "確定",
   SECRET_CLEAR: "全てクリア",

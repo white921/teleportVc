@@ -12,6 +12,7 @@ import {
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { MODAL_LABELS, MODAL_TITLES, VC_PANEL_MESSAGES } from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
+import { VcPanelService } from "../service/vcPanelService";
 import {
   fetchVoiceChannelSnapshot,
   getVoiceChannelStatus,
@@ -75,6 +76,27 @@ export async function handlePanelButton(
     case PANEL_COMMAND_NAMES.SECRET_CLEAR:
       await clearSecretSelection(interaction);
       return;
+    case PANEL_COMMAND_NAMES.RELOCATE_PANEL:
+      await relocatePanel(interaction, channel as VoiceChannel);
+      return;
+  }
+}
+
+async function relocatePanel(
+  interaction: ButtonInteraction,
+  voiceChannel: VoiceChannel,
+) {
+  // 古いパネルを削除して新しいパネルを最下部に送り直す。
+  await interaction.deferUpdate();
+  try {
+    await interaction.message.delete();
+  } catch (e: any) {
+    console.error("旧パネル削除エラー:", e?.message ?? e);
+  }
+  try {
+    await voiceChannel.send(VcPanelService.createVcPanel());
+  } catch (e: any) {
+    console.error("パネル再送信エラー:", e?.message ?? e);
   }
 }
 

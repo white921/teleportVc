@@ -32,6 +32,10 @@ export class VcPanelService {
         .setCustomId(PANEL_COMMAND_NAMES.SECRET)
         .setLabel(VC_PANEL_MESSAGES.SECRET)
         .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId(PANEL_COMMAND_NAMES.RELOCATE_PANEL)
+        .setLabel(VC_PANEL_MESSAGES.RELOCATE_PANEL)
+        .setStyle(ButtonStyle.Secondary),
     );
 
     return {
