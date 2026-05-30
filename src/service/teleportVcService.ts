@@ -106,7 +106,7 @@ export class TeleportVcService {
     // 続いて新VCのインチャ（ボイスチャンネル内テキストチャット）にパネル送信。
     // チャットが流れた場合はパネル上の「パネルを再配置」ボタンで最下部に出し直せる。
     try {
-      const panel = VcPanelService.createVcPanel();
+      const panel = VcPanelService.createVcPanel(categoryId);
       await voiceChannel.send(panel);
     } catch (e: any) {
       console.error(

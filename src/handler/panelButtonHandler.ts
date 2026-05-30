@@ -100,7 +100,9 @@ async function relocatePanel(
     console.error("旧パネル削除エラー:", e?.message ?? e);
   }
   try {
-    await voiceChannel.send(VcPanelService.createVcPanel());
+    await voiceChannel.send(
+      VcPanelService.createVcPanel(voiceChannel.parentId),
+    );
   } catch (e: any) {
     console.error("パネル再送信エラー:", e?.message ?? e);
   }
