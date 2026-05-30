@@ -8,7 +8,7 @@ import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
 import {
-  getVoiceChannelStatus,
+  fetchVoiceChannelSnapshot,
   setVoiceChannelStatus,
 } from "../service/voiceChannelStatus";
 import {
@@ -75,10 +75,11 @@ export async function handleModalSubmit(
     return;
   }
 
-  // 現在値と比較し、変わったものだけ適用する。
-  const currentName = stripSecretPrefix(voiceChannel.name);
-  const currentStatus = await getVoiceChannelStatus(voiceChannel);
-  const currentLimit = voiceChannel.userLimit;
+  // 現在値と比較し、変わったものだけ適用する。キャッシュ経由だと外部編集直後に差分検知が壊れるため REST から取り直す。
+  const snapshot = await fetchVoiceChannelSnapshot(voiceChannel);
+  const currentName = stripSecretPrefix(snapshot.name);
+  const currentStatus = snapshot.status;
+  const currentLimit = snapshot.userLimit;
 
   const changed: string[] = [];
 

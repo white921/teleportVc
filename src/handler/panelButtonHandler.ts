@@ -12,7 +12,7 @@ import {
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { MODAL_LABELS, MODAL_TITLES, VC_PANEL_MESSAGES } from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
-import { getVoiceChannelStatus } from "../service/voiceChannelStatus";
+import { fetchVoiceChannelSnapshot } from "../service/voiceChannelStatus";
 import { buildPermissionSummaryEmbed } from "../util/permissionSummary";
 import { PANEL_MESSAGE } from "../constant/message";
 import {
@@ -150,10 +150,12 @@ async function showSettingsModal(
   interaction: ButtonInteraction,
   voiceChannel: VoiceChannel,
 ) {
+  // キャッシュではなく REST から取り直す（外部から VC が編集された直後でも最新値を表示するため）。
+  const snapshot = await fetchVoiceChannelSnapshot(voiceChannel);
   // シークレット中の🔒はモーダルからは隠す（送信時に状態に応じて付け直す）。
-  const currentName = stripSecretPrefix(voiceChannel.name);
-  const currentStatus = await getVoiceChannelStatus(voiceChannel);
-  const currentLimit = String(voiceChannel.userLimit);
+  const currentName = stripSecretPrefix(snapshot.name);
+  const currentStatus = snapshot.status;
+  const currentLimit = String(snapshot.userLimit);
 
   const modal = new ModalBuilder()
     .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS)

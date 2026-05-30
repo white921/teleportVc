@@ -1,22 +1,35 @@
 import { VoiceChannel } from "discord.js";
 
+export interface VoiceChannelSnapshot {
+  name: string;
+  userLimit: number;
+  status: string;
+}
+
 /**
- * Discord ボイスチャンネルの「ステータス」（VC上部に表示される一文）を取得する。
- * discord.js v14 では VoiceChannel に status プロパティが無いため REST GET で取りに行く。
- * 取得失敗時は空文字を返す。
+ * VC の現在値（name / user_limit / status）を REST から1リクエストで取得する。
+ * キャッシュではなく Discord 側の真値を返すので、設定モーダルの初期値や差分比較に使う。
+ * 取得失敗時はキャッシュ値にフォールバックし、status のみ空文字とする。
  */
-export async function getVoiceChannelStatus(
+export async function fetchVoiceChannelSnapshot(
   channel: VoiceChannel,
-): Promise<string> {
+): Promise<VoiceChannelSnapshot> {
   try {
-    // @ts-ignore — Routes に status が無いバージョンに対応するため文字列で組む
     const data = (await channel.client.rest.get(
       `/channels/${channel.id}`,
-    )) as { status?: string | null };
-    return data.status ?? "";
+    )) as { name?: string; user_limit?: number; status?: string | null };
+    return {
+      name: data.name ?? channel.name,
+      userLimit: data.user_limit ?? channel.userLimit,
+      status: data.status ?? "",
+    };
   } catch (e: any) {
-    console.error("VCステータス取得エラー:", e?.message ?? e);
-    return "";
+    console.error("VCスナップショット取得エラー:", e?.message ?? e);
+    return {
+      name: channel.name,
+      userLimit: channel.userLimit,
+      status: "",
+    };
   }
 }
 
