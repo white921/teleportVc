@@ -161,8 +161,10 @@ async function showSettingsModal(
   const currentStatus = getVoiceChannelStatus(voiceChannel);
   const currentLimit = String(snapshot.userLimit);
 
+  // Discord クライアントは customId 一致のモーダル入力値をキャッシュするため、
+  // VC ごとに customId を分け、別 VC で開いたときに前回値が表示されないようにする。
   const modal = new ModalBuilder()
-    .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS)
+    .setCustomId(`${PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS}:${voiceChannel.id}`)
     .setTitle(MODAL_TITLES.CHANGE_VC_SETTINGS);
 
   const nameInput = new TextInputBuilder()
