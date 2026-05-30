@@ -40,7 +40,13 @@ export async function handleModalSubmit(
     return;
   }
 
-  if (interaction.customId !== PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS) return;
+  // customId は `${CHANGE_VC_SETTINGS}:${channelId}` 形式 (VC ごとに分けてある)。
+  if (
+    interaction.customId !== PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS &&
+    !interaction.customId.startsWith(`${PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS}:`)
+  ) {
+    return;
+  }
 
   const nameRaw = interaction.fields
     .getTextInputValue(MODAL_INPUT_IDS.VC_NAME)
