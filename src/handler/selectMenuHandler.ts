@@ -1,17 +1,18 @@
 import {
-  ChannelSelectMenuInteraction,
   ChannelType,
+  StringSelectMenuInteraction,
   UserSelectMenuInteraction,
   VoiceChannel,
 } from "discord.js";
 
 import { PANEL_COMMAND_NAMES } from "../constant/command";
 import { PANEL_MESSAGE } from "../constant/message";
+import { MOVE_CATEGORY_OPTIONS } from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
 import { buildSecretComponents, buildSecretEmbed, parseSecretUserIds } from "../util/secret";
 
-export async function handleChannelSelectMenu(
-  interaction: ChannelSelectMenuInteraction,
+export async function handleStringSelectMenu(
+  interaction: StringSelectMenuInteraction,
 ): Promise<void> {
   if (interaction.customId !== PANEL_COMMAND_NAMES.CATEGORY_SELECT) return;
 
@@ -43,8 +44,13 @@ export async function handleChannelSelectMenu(
   }
 
   const categoryId = interaction.values[0];
+  const isAllowed = MOVE_CATEGORY_OPTIONS.some((opt) => opt.id === categoryId);
   const category = interaction.guild?.channels.cache.get(categoryId);
-  if (!category || category.type !== ChannelType.GuildCategory) {
+  if (
+    !isAllowed ||
+    !category ||
+    category.type !== ChannelType.GuildCategory
+  ) {
     await interaction.reply({
       content: PANEL_MESSAGE.INVALID_CATEGORY,
       ephemeral: true,

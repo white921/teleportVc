@@ -1,16 +1,22 @@
 import {
   ActionRowBuilder,
   ButtonInteraction,
-  ChannelSelectMenuBuilder,
   ChannelType,
   ModalBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
   TextInputBuilder,
   TextInputStyle,
   VoiceChannel,
 } from "discord.js";
 
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
-import { MODAL_LABELS, MODAL_TITLES, VC_PANEL_MESSAGES } from "../constant/panel";
+import {
+  MODAL_LABELS,
+  MODAL_TITLES,
+  MOVE_CATEGORY_OPTIONS,
+  VC_PANEL_MESSAGES,
+} from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
 import { VcPanelService } from "../service/vcPanelService";
 import {
@@ -145,17 +151,21 @@ async function applySecretFromPanel(interaction: ButtonInteraction) {
 }
 
 async function showCategorySelect(interaction: ButtonInteraction) {
-  const select = new ChannelSelectMenuBuilder()
+  const select = new StringSelectMenuBuilder()
     .setCustomId(PANEL_COMMAND_NAMES.CATEGORY_SELECT)
     .setPlaceholder(VC_PANEL_MESSAGES.CATEGORY_SELECT_PLACEHOLDER)
-    .setChannelTypes(ChannelType.GuildCategory)
     .setMinValues(1)
-    .setMaxValues(1);
+    .setMaxValues(1)
+    .addOptions(
+      MOVE_CATEGORY_OPTIONS.map((opt) =>
+        new StringSelectMenuOptionBuilder().setLabel(opt.label).setValue(opt.id),
+      ),
+    );
 
   await interaction.reply({
     content: VC_PANEL_MESSAGES.CATEGORY_SELECT_PLACEHOLDER,
     components: [
-      new ActionRowBuilder<ChannelSelectMenuBuilder>().addComponents(select),
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select),
     ],
     ephemeral: true,
   });
