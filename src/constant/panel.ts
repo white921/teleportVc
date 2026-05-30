@@ -26,6 +26,12 @@ export const VC_PANEL_MESSAGES = {
   SECRET_SELECTED_NONE: "なし",
 } as const;
 
+export const MOVE_CATEGORY_OPTIONS = [
+  { id: "1401156195011657820", label: "ゲーム" },
+  { id: "1401183960024743991", label: "雑談VC" },
+  { id: "1403623803304542218", label: "ツーショ" },
+] as const;
+
 export const MODAL_TITLES = {
   CHANGE_VC_SETTINGS: "VC設定の変更",
 } as const;

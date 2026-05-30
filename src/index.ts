@@ -16,7 +16,7 @@ import { recordVoiceChannelStatus } from "./service/voiceChannelStatus";
 import { handlePanelButton } from "./handler/panelButtonHandler";
 import { handleModalSubmit } from "./handler/modalHandler";
 import {
-  handleChannelSelectMenu,
+  handleStringSelectMenu,
   handleUserSelectMenu,
 } from "./handler/selectMenuHandler";
 
@@ -157,8 +157,8 @@ client.on("interactionCreate", async (interaction) => {
       await handlePanelButton(interaction);
     } else if (interaction.isModalSubmit()) {
       await handleModalSubmit(interaction);
-    } else if (interaction.isChannelSelectMenu()) {
-      await handleChannelSelectMenu(interaction);
+    } else if (interaction.isStringSelectMenu()) {
+      await handleStringSelectMenu(interaction);
     } else if (interaction.isUserSelectMenu()) {
       await handleUserSelectMenu(interaction);
     }
@@ -167,7 +167,7 @@ client.on("interactionCreate", async (interaction) => {
     if (
       (interaction.isButton() ||
         interaction.isModalSubmit() ||
-        interaction.isChannelSelectMenu() ||
+        interaction.isStringSelectMenu() ||
         interaction.isUserSelectMenu()) &&
       !interaction.replied &&
       !interaction.deferred
