@@ -12,6 +12,7 @@ import dotenv from "dotenv";
 import { MANAGED_BOT_IDS, TELEPORT_VC_IDS } from "./constant/id";
 import { DbService } from "./service/dbService";
 import { TeleportVcService } from "./service/teleportVcService";
+import { recordVoiceChannelStatus } from "./service/voiceChannelStatus";
 import { handlePanelButton } from "./handler/panelButtonHandler";
 import { handleModalSubmit } from "./handler/modalHandler";
 import {
@@ -137,6 +138,15 @@ client.on(
     }
   },
 );
+
+// VOICE_CHANNEL_STATUS_UPDATE は discord.js v14 にイベント定義が無いため raw で拾う。
+// VC上部の一文 (status) は Gateway 経由でしか取得できないので、ここでキャッシュする。
+client.on("raw", (packet: any) => {
+  if (packet?.t !== "VOICE_CHANNEL_STATUS_UPDATE") return;
+  const channelId: string | undefined = packet.d?.id ?? packet.d?.channel_id;
+  if (!channelId) return;
+  recordVoiceChannelStatus(channelId, packet.d?.status ?? "");
+});
 
 client.on("interactionCreate", async (interaction) => {
   try {
