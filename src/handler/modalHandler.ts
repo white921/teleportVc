@@ -8,6 +8,7 @@ import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
 import {
+  fetchVoiceChannelSnapshot,
   getVoiceChannelStatus,
   setVoiceChannelStatus,
 } from "../service/voiceChannelStatus";
@@ -76,9 +77,12 @@ export async function handleModalSubmit(
   }
 
   // 現在値と比較し、変わったものだけ適用する。
-  const currentName = stripSecretPrefix(voiceChannel.name);
+  // name / userLimit は discord.js キャッシュが古い可能性があるため REST から取り直す。
+  // status は REST では取れないので Gateway 由来のキャッシュを使う。
+  const snapshot = await fetchVoiceChannelSnapshot(voiceChannel);
+  const currentName = stripSecretPrefix(snapshot.name);
   const currentStatus = getVoiceChannelStatus(voiceChannel);
-  const currentLimit = voiceChannel.userLimit;
+  const currentLimit = snapshot.userLimit;
 
   const changed: string[] = [];
 

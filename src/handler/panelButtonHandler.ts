@@ -12,7 +12,10 @@ import {
 import { MODAL_INPUT_IDS, PANEL_COMMAND_NAMES } from "../constant/command";
 import { MODAL_LABELS, MODAL_TITLES, VC_PANEL_MESSAGES } from "../constant/panel";
 import { TeleportVcService } from "../service/teleportVcService";
-import { getVoiceChannelStatus } from "../service/voiceChannelStatus";
+import {
+  fetchVoiceChannelSnapshot,
+  getVoiceChannelStatus,
+} from "../service/voiceChannelStatus";
 import { buildPermissionSummaryEmbed } from "../util/permissionSummary";
 import { PANEL_MESSAGE } from "../constant/message";
 import {
@@ -150,10 +153,13 @@ async function showSettingsModal(
   interaction: ButtonInteraction,
   voiceChannel: VoiceChannel,
 ) {
+  // name / userLimit は discord.js キャッシュが古い可能性があるため REST から取り直す。
+  // status は REST では取れないので Gateway 由来のキャッシュを使う。
+  const snapshot = await fetchVoiceChannelSnapshot(voiceChannel);
   // シークレット中の🔒はモーダルからは隠す（送信時に状態に応じて付け直す）。
-  const currentName = stripSecretPrefix(voiceChannel.name);
+  const currentName = stripSecretPrefix(snapshot.name);
   const currentStatus = getVoiceChannelStatus(voiceChannel);
-  const currentLimit = String(voiceChannel.userLimit);
+  const currentLimit = String(snapshot.userLimit);
 
   const modal = new ModalBuilder()
     .setCustomId(PANEL_COMMAND_NAMES.CHANGE_VC_SETTINGS)

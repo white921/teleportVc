@@ -25,6 +25,37 @@ export function getVoiceChannelStatus(channel: VoiceChannel): string {
   return statusCache.get(channel.id) ?? "";
 }
 
+export interface VoiceChannelSnapshot {
+  name: string;
+  userLimit: number;
+}
+
+/**
+ * VC の現在値 (name / user_limit) を REST から1リクエストで取得する。
+ * discord.js のキャッシュではなく Discord 側の真値を返すので、設定モーダルの初期値や差分比較に使う。
+ * status は REST で取れないため含めない (getVoiceChannelStatus を併用すること)。
+ * 取得失敗時はキャッシュ値にフォールバックする。
+ */
+export async function fetchVoiceChannelSnapshot(
+  channel: VoiceChannel,
+): Promise<VoiceChannelSnapshot> {
+  try {
+    const data = (await channel.client.rest.get(
+      `/channels/${channel.id}`,
+    )) as { name?: string; user_limit?: number };
+    return {
+      name: data.name ?? channel.name,
+      userLimit: data.user_limit ?? channel.userLimit,
+    };
+  } catch (e: any) {
+    console.error("VCスナップショット取得エラー:", e?.message ?? e);
+    return {
+      name: channel.name,
+      userLimit: channel.userLimit,
+    };
+  }
+}
+
 /**
  * Discord ボイスチャンネルの「ステータス」を設定する。
  * discord.js v14 では公式メソッドが未提供のため REST PUT で叩く。
