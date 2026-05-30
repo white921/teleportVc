@@ -7,6 +7,12 @@ export const TELEPORT_VC_IDS: string[] = [
   "1509854233418141807",
 ];
 
+// 転送用VCごとの「作成時の人数制限」初期値。未指定の転送用VCは Discord 既定(0=無制限)。
+// パネルからの変更時にはこの制限は関与しない。
+export const TELEPORT_VC_DEFAULT_USER_LIMIT: Record<string, number> = {
+  "1509854053461528706": 2,
+};
+
 // 権限確認 / シークレット設定パネルから常に除外したいユーザー（Bot）のID一覧。
 // guild.members.cache に乗っておらず .user.bot 判定が外れるケースの保険として効く。
 export const EXCLUDED_USER_IDS: string[] = [

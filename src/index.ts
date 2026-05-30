@@ -74,6 +74,24 @@ client.on(
 
       if (newState.member?.user.bot || oldState.member?.user.bot) return;
 
+      // 先に oldChannel のクリーンアップを行う。
+      // 転送用VCに入った場合 (下の createTeleportVc 分岐) でも、移動元の作成済みVCが
+      // 空になっていれば削除されるようにするため、newChannel の分岐より前で処理する。
+      if (oldChannel && oldChannel.type === ChannelType.GuildVoice) {
+        await TeleportVcService.deleteIfEmptyAfterOccupied(oldChannel);
+        if (oldChannel.id !== newChannel?.id) {
+          // 削除されなかった場合のみ rename を試みる
+          const stillExists = oldChannel.guild.channels.cache.get(
+            oldChannel.id,
+          );
+          if (stillExists && stillExists.type === ChannelType.GuildVoice) {
+            await TeleportVcService.syncVcNameToTopGame(
+              stillExists as VoiceChannel,
+            );
+          }
+        }
+      }
+
       if (
         newChannel &&
         newChannel.type === ChannelType.GuildVoice &&
@@ -91,21 +109,6 @@ client.on(
         const vc = newChannel as VoiceChannel;
         await TeleportVcService.markOccupiedIfTracked(vc);
         await TeleportVcService.syncVcNameToTopGame(vc);
-      }
-
-      if (oldChannel && oldChannel.type === ChannelType.GuildVoice) {
-        await TeleportVcService.deleteIfEmptyAfterOccupied(oldChannel);
-        if (oldChannel.id !== newChannel?.id) {
-          // 削除されなかった場合のみ rename を試みる
-          const stillExists = oldChannel.guild.channels.cache.get(
-            oldChannel.id,
-          );
-          if (stillExists && stillExists.type === ChannelType.GuildVoice) {
-            await TeleportVcService.syncVcNameToTopGame(
-              stillExists as VoiceChannel,
-            );
-          }
-        }
       }
     } catch (e: any) {
       console.error("voiceStateUpdateエラー:", e?.message ?? e);

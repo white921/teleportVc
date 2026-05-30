@@ -14,6 +14,7 @@ import { VcPanelService } from "./vcPanelService";
 import { getVcMembersCount } from "../util/vc";
 import { addSecretPrefix, hasSecretPrefix } from "../util/secret";
 import { TELEPORT_MESSAGE } from "../constant/message";
+import { TELEPORT_VC_DEFAULT_USER_LIMIT } from "../constant/id";
 
 interface TrackedVcRow {
   channel_id: string;
@@ -60,18 +61,22 @@ export class TeleportVcService {
           PermissionFlagsBits.Connect |
           PermissionFlagsBits.SendMessages |
           PermissionFlagsBits.ManageChannels |
+          PermissionFlagsBits.ManageMessages |
           PermissionFlagsBits.MoveMembers,
         deny: 0n,
       } as any);
     }
 
     const defaultName = `${member.displayName}のVC`;
+    // 転送用VCごとに初期人数制限を指定可能。マップに無いものは 0 (無制限)。
+    const defaultUserLimit = TELEPORT_VC_DEFAULT_USER_LIMIT[parentVc.id] ?? 0;
 
     const voiceChannel = await guild.channels.create({
       name: defaultName,
       type: ChannelType.GuildVoice,
       parent: categoryId,
       permissionOverwrites,
+      userLimit: defaultUserLimit,
     });
 
     await this.insertTeleportVc({
@@ -99,10 +104,20 @@ export class TeleportVcService {
       throw new Error(TELEPORT_MESSAGE.CREATE_FAILED);
     }
 
-    // 続いて新VCのインチャ（ボイスチャンネル内テキストチャット）にパネル送信
+    // 続いて新VCのインチャ（ボイスチャンネル内テキストチャット）にパネル送信＆ピン留め。
+    // ピン留めしておくことでチャットが流れてもピンアイコンから常にアクセスできる。
     try {
       const panel = VcPanelService.createVcPanel();
-      await voiceChannel.send(panel);
+      const panelMessage = await voiceChannel.send(panel);
+      try {
+        await panelMessage.pin();
+      } catch (e: any) {
+        console.error(
+          "パネルピン留めエラー:",
+          e?.message ?? e,
+          `(channel=${voiceChannel.id})`,
+        );
+      }
     } catch (e: any) {
       console.error(
         "パネル送信エラー:",
