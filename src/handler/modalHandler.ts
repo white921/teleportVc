@@ -9,6 +9,7 @@ import { PANEL_MESSAGE } from "../constant/message";
 import { TeleportVcService } from "../service/teleportVcService";
 import {
   fetchVoiceChannelSnapshot,
+  getVoiceChannelStatus,
   setVoiceChannelStatus,
 } from "../service/voiceChannelStatus";
 import {
@@ -75,10 +76,12 @@ export async function handleModalSubmit(
     return;
   }
 
-  // 現在値と比較し、変わったものだけ適用する。キャッシュ経由だと外部編集直後に差分検知が壊れるため REST から取り直す。
+  // 現在値と比較し、変わったものだけ適用する。
+  // name / userLimit は discord.js キャッシュが古い可能性があるため REST から取り直す。
+  // status は REST では取れないので Gateway 由来のキャッシュを使う。
   const snapshot = await fetchVoiceChannelSnapshot(voiceChannel);
   const currentName = stripSecretPrefix(snapshot.name);
-  const currentStatus = snapshot.status;
+  const currentStatus = getVoiceChannelStatus(voiceChannel);
   const currentLimit = snapshot.userLimit;
 
   const changed: string[] = [];
