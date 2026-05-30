@@ -1,12 +1,5 @@
 export const VC_PANEL_MESSAGES = {
   TITLE: "VC操作パネル",
-  DESCRIPTION:
-    "このVCを操作できます。\n" +
-    "・VC設定を変更: VC名 / ステータス / 人数制限 をまとめて変更\n" +
-    "・権限を確認: 公開/シークレット状態と人数制限を表示\n" +
-    "・カテゴリを移動: 親カテゴリを変更\n" +
-    "・シークレット: 指定メンバーだけが入れる非公開VCにする\n" +
-    "・パネルを再配置: チャットで流れたパネルを最下部に出し直す",
   CHANGE_VC_SETTINGS: "VC設定を変更",
   VIEW_PERMISSIONS: "権限を確認",
   CHANGE_CATEGORY: "カテゴリを移動",
@@ -26,10 +19,12 @@ export const VC_PANEL_MESSAGES = {
   SECRET_SELECTED_NONE: "なし",
 } as const;
 
+export const TWO_SHOT_CATEGORY_ID = "1403623803304542218";
+
 export const MOVE_CATEGORY_OPTIONS = [
   { id: "1401156195011657820", label: "ゲーム" },
   { id: "1401183960024743991", label: "雑談VC" },
-  { id: "1403623803304542218", label: "ツーショ" },
+  { id: TWO_SHOT_CATEGORY_ID, label: "ツーショ" },
 ] as const;
 
 export const MODAL_TITLES = {
