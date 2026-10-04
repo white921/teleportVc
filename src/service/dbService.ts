@@ -8,7 +8,7 @@ function buildPool() {
   return mysql.createPool({
     uri: url,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 5,
     queueLimit: 0,
     supportBigNumbers: true,
     bigNumberStrings: true,
